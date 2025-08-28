@@ -75,12 +75,12 @@ export const Sidebar = () => {
     open: {
       transition: {
         staggerChildren: 0.1,
-        delayChildren: 0.2,
+        delayChildren: 0.1,
       },
     },
     closed: {
       transition: {
-        staggerChildren: 0.08,
+        staggerChildren: 0.05,
         staggerDirection: -1,
         delayChildren: 0,
       },
@@ -91,10 +91,12 @@ export const Sidebar = () => {
     open: {
       opacity: 1.02,
       y: 0,
+      scale: 1,
     },
     closed: {
       opacity: 1,
       y: -10,
+      scale: 0.85,
     },
   };
 
@@ -181,11 +183,12 @@ export const Sidebar = () => {
                 : "relative mt-5 flex w-16 flex-1 flex-col items-center"
             }
           >
-            {isOpen ? (
-              <>
-                {links.map((link) => (
+            {isOpen
+              ? links.map((link) => (
                   <motion.button
                     key={link.name}
+                    initial="closed"
+                    animate={isOpen ? "open" : "closed"}
                     variants={childVars}
                     className="h-10 w-full rounded-3xl transition-colors duration-200 hover:bg-neutral-700"
                   >
@@ -196,25 +199,27 @@ export const Sidebar = () => {
                       </span>
                     </span>
                   </motion.button>
+                ))
+              : links.map((link) => (
+                  <motion.button
+                    key={link.name}
+                    initial="closed"
+                    animate={isOpen ? "open" : "closed"}
+                    variants={childVars}
+                    className="rounded-lg p-3 transition-colors duration-200 hover:bg-neutral-700"
+                  >
+                    {link.icon}
+                  </motion.button>
                 ))}
-              </>
-            ) : (
-              <>
-                <div className="flex h-[25%] flex-col items-center space-y-2">
-                  {links.map((link) => (
-                    <motion.button
-                      key={link.name}
-                      variants={childVars}
-                      className="rounded-lg p-3 transition-colors duration-200 hover:bg-neutral-700"
-                    >
-                      {link.icon}
-                    </motion.button>
-                  ))}
-                </div>
-                <div className="absolute bottom-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-600">
-                  <User className="h-5 w-5 text-white" />
-                </div>
-              </>
+            {!isOpen && (
+              <motion.div
+                initial="closed"
+                animate={isOpen ? "open" : "closed"}
+                variants={childVars}
+                className="absolute bottom-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-600"
+              >
+                <User className="h-5 w-5 text-white" />
+              </motion.div>
             )}
           </motion.div>
 
@@ -235,38 +240,73 @@ export const Sidebar = () => {
                 </button>
 
                 {isChatsExpanded && (
-                  <div className="custom-scrollbar mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto">
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                  <motion.div
+                    initial={false}
+                    animate={isChatsExpanded ? "open" : "closed"}
+                    variants={parentVars}
+                    className="custom-scrollbar mt-2 min-h-0 flex-1 space-y-1 overflow-y-auto"
+                  >
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Chat with AI Assistant
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Project Discussion
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Code Review Session
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Bug Investigation
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Feature Planning
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Documentation Review
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       API Integration Chat
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Database Design Discussion
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Bug Investigation
-                    </div>
-                    <div className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white">
+                    </motion.div>
+                    <motion.div
+                      variants={childVars}
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                    >
                       Feature Planning
-                    </div>
-                  </div>
+                    </motion.div>
+                  </motion.div>
                 )}
               </div>
             </div>

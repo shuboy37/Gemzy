@@ -7,7 +7,7 @@ import {
   PromptInputTextarea,
 } from "./ui/InputBox";
 import { Button } from "@/components/ui/Button";
-import { ArrowUp, ImageUp, Square, X} from "lucide-react";
+import { ArrowUp, ImageUp, Square, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 
 import { ModelDropdown } from "@/components/ui/ReusableUI";
@@ -129,7 +129,7 @@ export function PromptInputWithActions({
                 ref={uploadInputRef}
                 disabled={model !== "gemini-2.0-flash"}
               />
-              <Paperclip className="size-5 text-black" />
+              <ImageUp className="size-5 text-black" />
             </label>
           </PromptInputAction>
           <PromptInputAction
