@@ -2,6 +2,7 @@
 
 // import { DropdownMenuCheckboxItemProps } from "@radix-ui/react-dropdown-menu";
 import { ChevronUp } from "lucide-react";
+import { motion } from "motion/react";
 
 import {
   DropdownMenu,
@@ -21,7 +22,7 @@ type ModelDropdownProps = {
   files: File[];
   isOpen: boolean;
   setIsOpen: (prev: boolean) => void;
-  setIsDropOpen: (prev: boolean) => void;
+  // setIsDropOpen: (prev: boolean) => void;
   // setTooltipOpen: (prev: boolean) => void;
 };
 
@@ -34,7 +35,7 @@ export function ModelDropdown({
   files,
   // onClick,
   setIsOpen,
-  setIsDropOpen,
+  // setIsDropOpen,
 }: // setTooltipOpen,
 ModelDropdownProps) {
   // const [isOpen, setIsOpen] = useState(false)
@@ -43,19 +44,29 @@ ModelDropdownProps) {
       onOpenChange={(open) => {
         // setTooltipOpen(false);
         setIsOpen(open);
-        setIsDropOpen(!open);
+        // setIsDropOpen(!open);
       }}
       open={isOpen}
     >
       <DropdownMenuTrigger asChild>
-        <div className="rounded-2xl hover:bg-gray-400">
+        <motion.div
+          initial={false}
+          animate={{ rotate: isOpen ? 0 : 180 }}
+          transition={{
+            type: "spring",
+            stiffness: 500,
+            damping: 27,
+            mass: 1,
+            ease: "easeInOut",
+            duration: 0.25,
+          }}
+          className="origin-center"
+        >
           <ChevronUp
-            className={`${
-              isOpen ? "rotate-0 bg-gray-400" : "rotate-180"
-            } h-8 w-8 rounded-2xl text-black transition-all duration-150 ease-in-out hover:bg-gray-400`}
+            className={`h-8 w-8 text-white transition-all duration-150 ease-in-out hover:bg-neutral-800`}
             strokeOpacity="0.79"
           />
-        </div>
+        </motion.div>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-48 translate-y-3 border-2 border-gray-700 bg-black">
         <DropdownMenuLabel className="border-b-2 border-gray-700 font-extralight text-white">

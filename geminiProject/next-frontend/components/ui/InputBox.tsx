@@ -8,7 +8,14 @@ import {
   TooltipTrigger,
 } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
-import React, { createContext, useContext, useEffect, useRef } from "react";
+import { motion } from "motion/react";
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 const PromptInputContext = createContext({
   isLoading: false,
@@ -35,6 +42,7 @@ type PromptInputProps = {
   onChange: (_e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: () => void;
   disabled: boolean;
+  // response: string;
   children: React.ReactNode;
 };
 
@@ -47,7 +55,10 @@ function PromptInput({
   onSubmit,
   disabled = false,
   children,
+  // response,
 }: PromptInputProps) {
+  const [isFocused, setIsFocused] = useState(false);
+  console.log(value.trim());
   return (
     <TooltipProvider>
       <PromptInputContext.Provider
@@ -60,14 +71,26 @@ function PromptInput({
           disabled,
         }}
       >
-        <div
+        <motion.div
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          animate={{
+            boxShadow:
+              isFocused && value.trim()
+                ? "0 0 0 1.5px #F59E0B, 0 0 15px 5px #F59E0B40"
+                : "none",
+          }}
+          transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
           className={cn(
-            "border-input rounded-3xl border bg-gray-300 p-2 shadow-xs",
+            "relative rounded-3xl p-2 transition-colors duration-300",
+            isFocused && value.trim()
+              ? "shimmer-active border-transparent bg-black"
+              : "border border-neutral-700 bg-neutral-900",
             className
           )}
         >
           {children}
-        </div>
+        </motion.div>
       </PromptInputContext.Provider>
     </TooltipProvider>
   );
@@ -119,7 +142,7 @@ function PromptInputTextarea({
       onChange={(e) => onChange?.(e)}
       onKeyDown={handleKeyDown}
       className={cn(
-        `min-h-[80px] w-full resize-none border-none bg-gray-300 font-semibold text-black shadow-none outline-none placeholder:text-gray-500 focus-visible:ring-0 focus-visible:ring-offset-0`,
+        `min-h-[80px] w-full resize-none border-none bg-transparent font-semibold text-white shadow-none outline-none placeholder:text-gray-400 focus-visible:ring-0 focus-visible:ring-offset-0`,
         className
       )}
       rows={1}
@@ -150,7 +173,7 @@ function PromptInputActions({
 type PromptInputActionProps = {
   tooltip: string;
   disabled?: boolean;
-  isDropOpen?: boolean;
+  // isDropOpen?: boolean;
   children: React.ReactNode;
   className?: string;
   side?: "top" | "right" | "bottom" | "left";
@@ -162,9 +185,9 @@ function PromptInputAction({
   tooltip,
   disabled,
   children,
-  className = "bg-black text-white",
+  className = "bg-neutral-800 text-white border border-neutral-600",
   side = "top",
-  isDropOpen,
+  // isDropOpen,
   // tooltipOpen,
   // setTooltipOpen,
   ...props
