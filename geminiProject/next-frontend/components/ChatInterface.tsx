@@ -5,6 +5,7 @@ import { useState } from "react";
 // import Image from "next/image";
 import { Textarea } from "@/components/ui/TextArea";
 import { PromptInputWithActions } from "@/components/inputBox-demo";
+import { Orb } from "@/components/ui/Orb";
 
 interface ChatInterfaceProps {}
 
@@ -134,9 +135,13 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   return (
     <div className="flex h-full w-full flex-col items-center space-y-20 pb-16">
       {!response && (
-        <h1 className="text-center text-2xl leading-tight font-semibold text-pretty whitespace-pre-wrap text-white sm:text-3xl md:text-4xl lg:text-5xl">
-          Say it. I'll make it real.
-        </h1>
+        <div className="relative flex items-center justify-center space-x-5">
+          {/* Orb positioned behind the h1 */}
+          <Orb className="absolute -z-10 translate-y-1" />
+          <h1 className="text-center text-2xl leading-tight font-semibold text-pretty whitespace-pre-wrap text-white select-none sm:text-3xl md:text-4xl lg:text-5xl">
+            Say it. I'll make it real.
+          </h1>
+        </div>
       )}
       <div className="w-full max-w-4xl items-center">
         <div className="flex w-full items-center justify-center">
@@ -150,6 +155,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
             loading={loading}
             onSubmit={onSubmitHandler}
             disabled={loading}
+            // response= {response}
           />
         </div>
       </div>

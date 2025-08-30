@@ -22,6 +22,7 @@ type PromptInputWithActionsProps = {
   onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onSubmit: () => void;
   disabled: boolean;
+  // response: string;
 };
 
 export function PromptInputWithActions({
@@ -34,10 +35,11 @@ export function PromptInputWithActions({
   onChange,
   onSubmit,
   disabled,
+  // response,
 }: PromptInputWithActionsProps) {
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [isDropOpen, setIsDropOpen] = useState(true);
+  // const [isDropOpen, setIsDropOpen] = useState(true);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files) {
@@ -76,6 +78,7 @@ export function PromptInputWithActions({
       onSubmit={onSubmit}
       onChange={onChange}
       disabled={disabled}
+      // response={response}
       className="w-full max-w-(--breakpoint-md)"
     >
       {files.length > 0 && (
@@ -116,7 +119,7 @@ export function PromptInputWithActions({
               htmlFor="file-upload"
               className={`flex h-8 w-8 items-center justify-center rounded-2xl ${
                 model === "gemini-2.0-flash"
-                  ? "cursor-pointer hover:bg-gray-400"
+                  ? "cursor-pointer hover:bg-gray-600"
                   : "pointer-events-none cursor-not-allowed opacity-50"
               }`}
             >
@@ -129,15 +132,15 @@ export function PromptInputWithActions({
                 ref={uploadInputRef}
                 disabled={model !== "gemini-2.0-flash"}
               />
-              <ImageUp className="size-5 text-black" />
+              <ImageUp className="size-5 text-white" />
             </label>
           </PromptInputAction>
           <PromptInputAction
             tooltip="Choose Model"
             disabled={isOpen}
-            isDropOpen={isDropOpen}
+            // isDropOpen={isDropOpen}
           >
-            <div className="h-8 w-8 cursor-pointer rounded-2xl hover:bg-gray-400">
+            <div className="h-8 w-8 cursor-pointer rounded-2xl hover:bg-gray-600">
               <ModelDropdown
                 onFlashClick={() => setModel("gemini-2.0-flash")}
                 onImageGenClick={() =>
@@ -147,7 +150,7 @@ export function PromptInputWithActions({
                 model={model}
                 isOpen={isOpen}
                 setIsOpen={setIsOpen}
-                setIsDropOpen={setIsDropOpen}
+                // setIsDropOpen={setIsDropOpen}
                 files={files}
               />
             </div>
@@ -161,13 +164,13 @@ export function PromptInputWithActions({
             <Button
               variant="default"
               size="icon"
-              className="h-8 w-8 rounded-full fill-current hover:bg-gray-400"
+              className="h-8 w-8 rounded-full bg-gray-700 fill-current text-white hover:bg-gray-600"
               onClick={onSubmit}
             >
               {loading ? (
-                <Square className="size-5 fill-current hover:fill-white" />
+                <Square className="size-5 fill-current text-white" />
               ) : (
-                <ArrowUp className="size-5" />
+                <ArrowUp className="size-5 text-white" />
               )}
             </Button>
           </PromptInputAction>
