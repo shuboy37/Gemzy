@@ -70,3 +70,138 @@ button:disabled {
     display: none;
   }
 }
+
+/* Shimmer animation for InputBox component */
+@keyframes shimmer-glow {
+  0%,
+  100% {
+    border-color: #f59e0b;
+    box-shadow: 0 0 15px #f59e0b40;
+  }
+  50% {
+    border-color: #fbbf24;
+    box-shadow: 0 0 20px #fbbf2480;
+  }
+}
+
+/* Add a class that will be toggled on the PromptInput container */
+.shimmer-active {
+  border: 1.5px solid #f59e0b;
+  animation: shimmer-glow 2s ease-in-out infinite;
+}
+
+/* Orb animations and styles */
+@keyframes pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
+}
+
+@keyframes energy-rotate {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes spark-flicker {
+  0%,
+  100% {
+    opacity: 0.8;
+    transform: scale(0.9);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  75% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes aura-glow {
+  0%,
+  100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+  }
+}
+
+.orb-container {
+  animation: pulse 6s ease-in-out infinite;
+}
+
+.orb-core {
+  background: radial-gradient(
+    circle,
+    #ff6b35 0%,
+    /* Vibrant orange-red */ #ff8c42 30%,
+    /* Bright orange */ #ffd23f 60%,
+    /* Golden yellow */ #ff006e 85%,
+    /* Hot pink */ transparent 100%
+  );
+  filter: blur(6px);
+  z-index: 3;
+  box-shadow:
+    0 0 20px rgba(255, 107, 53, 0.7),
+    0 0 40px rgba(255, 0, 110, 0.4);
+}
+
+.orb-energy {
+  background: conic-gradient(
+    from 0deg,
+    #ff006e 0%,
+    /* Hot pink */ #ff6b35 25%,
+    /* Orange-red */ #ffd23f 50%,
+    /* Golden */ #ff006e 75%,
+    /* Hot pink */ #ff6b35 100% /* Orange-red */
+  );
+  filter: blur(12px);
+  z-index: 2;
+  animation: energy-rotate 8s linear infinite;
+  opacity: 0.8;
+}
+
+.orb-aura {
+  background: radial-gradient(
+    circle,
+    rgba(255, 107, 53, 0.8) 0%,
+    /* Vibrant orange */ rgba(255, 210, 63, 0.6) 30%,
+    /* Golden glow */ rgba(255, 0, 110, 0.4) 60%,
+    /* Pink edge */ transparent 80%
+  );
+  filter: blur(25px);
+  z-index: 1;
+  animation: aura-glow 5s ease-in-out infinite;
+}
+
+.orb-spark {
+  background: radial-gradient(
+    circle,
+    #ffffff 0%,
+    /* Pure white center */ #ffd23f 40%,
+    /* Golden */ #ff6b35 70%,
+    /* Orange */ transparent 100%
+  );
+  filter: blur(2px);
+  z-index: 4;
+  animation: spark-flicker 3s ease-in-out infinite;
+  box-shadow:
+    0 0 10px #ffffff,
+    0 0 20px #ffd23f;
+}
