@@ -1,6 +1,6 @@
 import { GenerateContentResponse } from "@google/genai";
 
-export const getImageService = async (response: GenerateContentResponse) => {
+export const getImageGenService = async (response: GenerateContentResponse) => {
   let finalResponse = "";
   let imageDataSrc = "";
   let textWithPic = false;
