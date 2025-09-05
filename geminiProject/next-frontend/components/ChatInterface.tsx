@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 // import { useEffect } from "react";
 // import Image from "next/image";
 import { Textarea } from "@/components/ui/TextArea";
 import { PromptInputWithActions } from "@/components/inputBox-demo";
 import { Orb } from "@/components/ui/Orb";
+import { li, pre } from "motion/react-client";
 
 interface ChatInterfaceProps {}
 
@@ -53,7 +54,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     }
 
     setLoading(true);
-    setResponse("");
+    setResponse("Thinking....");
     setImageDataSrc(undefined);
     // setOptimizedImageSrc(null);
     setOnlyText(false);
@@ -73,7 +74,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
         method: "POST",
         body: formdata,
       });
-
+      console.log(stream);
       if (!stream.ok) {
         const errorData = await stream.json();
         throw new Error(
@@ -82,27 +83,49 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       }
 
       const reader = stream.body?.getReader();
+      console.log(reader);
       if (!reader) {
         throw new Error("Could not read response stream.");
       }
       const decoder = new TextDecoder("utf-8");
+      console.log(decoder);
 
       while (true) {
         const { done, value } = await reader.read();
+        console.log(value);
         if (done) break;
 
         const chunk = decoder.decode(value, { stream: true });
-
+        console.log(chunk);
         for (const line of chunk.trim().split("\n")) {
           try {
+            console.log(line);
             const json = JSON.parse(line);
-
+            console.log(json);
             if (json.type === "delta") {
-              setResponse((prev) => prev + json.content);
+              setResponse((prev) => {
+                if (prev === "Thinking....") {
+                  return json.content;
+                }
+                return prev + json.content;
+              });
             } else if (json.type === "final_gemini_response") {
               setResponse(json.data.response);
               setOnlyText(json.data.textWithPic);
-              setImageDataSrc(json.data.imageDataSrc);
+              if (json.data.imgId) {
+                const imgBody = await fetch("/api/image", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({ imageId: json.data.imgId }),
+                });
+                if (imgBody.status !== 200) {
+                  throw new Error("Cant fetch image from given id..");
+                }
+                const imgData = await imgBody.json();
+                setImageDataSrc(imgData.imageDataSrc);
+              }
               setModel(json.data.effectiveModel);
             } else if (json.type === "meta") {
               setModel(json.model);
@@ -136,7 +159,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     <div className="flex h-full w-full flex-col items-center space-y-20 pb-16">
       {!response && (
         <div className="relative flex items-center justify-center space-x-5">
-          {/* Orb positioned behind the h1 */}
           <Orb className="absolute -z-10 translate-y-1" />
           <h1 className="text-center text-2xl leading-tight font-semibold text-pretty whitespace-pre-wrap text-white select-none sm:text-3xl md:text-4xl lg:text-5xl">
             Say it. I'll make it real.
