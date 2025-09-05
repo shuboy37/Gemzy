@@ -1,8 +1,11 @@
 import { Part } from "@google/genai";
 import { getUrlToUploadService } from "@/lib/backend/services/urlToUploadServices";
 import { getFileUploadService } from "@/lib/backend/services/fileUploadService";
-import { getImageService } from "@/lib/backend/services/imageServices";
+import { getImageGenService } from "@/lib/backend/services/imageServices";
 import { getGeminiService } from "@/lib/backend/services/geminiSdkService";
+import { getIdAndSaveImage } from "@/lib/backend/services/getIdAndSaveImg";
+
+export const imageCache = new Map<string, string>();
 
 export const handleGemini = (
   input: string,
@@ -54,11 +57,12 @@ export const handleGemini = (
         let finalResult;
         if (effectiveModel === "gemini-2.0-flash-exp-image-generation") {
           const { finalResponse, textWithPic, imageDataSrc } =
-            await getImageService(response);
+            await getImageGenService(response);
+          const imgId = await getIdAndSaveImage({ imageCache, imageDataSrc });
           finalResult = {
             response: finalResponse,
             textWithPic,
-            imageDataSrc,
+            imgId,
             effectiveModel,
           };
         } else {
@@ -72,6 +76,7 @@ export const handleGemini = (
             type: "final_gemini_response",
             data: finalResult,
           }) + "\n";
+        console.log(chunk);
 
         controller.enqueue(new TextEncoder().encode(chunk));
 
