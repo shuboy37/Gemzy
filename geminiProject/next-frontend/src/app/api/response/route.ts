@@ -36,6 +36,7 @@ export async function POST(req: NextRequest) {
     } else {
       console.log("[API Route] Handing off to Gemini handler.");
       stream = handleGemini(input, effectiveModel, files);
+      console.log(stream);
     }
 
     return new NextResponse(stream, {
