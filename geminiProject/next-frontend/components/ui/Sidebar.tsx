@@ -81,7 +81,7 @@ export const Sidebar = () => {
     closed: {
       transition: {
         staggerChildren: 0.05,
-        staggerDirection: -1,
+        // staggerDirection: -1,
         delayChildren: 0,
       },
     },
@@ -90,13 +90,13 @@ export const Sidebar = () => {
   const childVars = {
     open: {
       opacity: 1.02,
-      y: 0,
+      y: 3,
       scale: 1,
     },
     closed: {
       opacity: 1,
       y: -10,
-      scale: 0.85,
+      scale: 0.95,
     },
   };
 
@@ -212,14 +212,9 @@ export const Sidebar = () => {
                   </motion.button>
                 ))}
             {!isOpen && (
-              <motion.div
-                initial="closed"
-                animate={isOpen ? "open" : "closed"}
-                variants={childVars}
-                className="absolute bottom-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-600"
-              >
+              <div className="absolute bottom-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-600">
                 <User className="h-5 w-5 text-white" />
-              </motion.div>
+              </div>
             )}
           </motion.div>
 
