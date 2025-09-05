@@ -6,15 +6,17 @@ export const handleGroq = async (
 ): Promise<ReadableStream> => {
   try {
     const groqStream = await getGroqChatCompletion({ input, effectiveModel });
-
+    console.log(groqStream);
     return new ReadableStream({
       async start(controller) {
         try {
           for await (const chunk of groqStream) {
+            console.log(chunk);
             const delta = chunk.choices[0]?.delta?.content;
             if (delta) {
               const jsonChunk =
                 JSON.stringify({ type: "delta", content: delta }) + "\n";
+              console.log(jsonChunk);
               controller.enqueue(new TextEncoder().encode(jsonChunk));
             }
           }
