@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/TextArea";
 import { PromptInputWithActions } from "@/components/inputBox-demo";
 import { Orb } from "@/components/ui/Orb";
-import { li, pre } from "motion/react-client";
 
 interface ChatInterfaceProps {}
 
@@ -47,6 +46,21 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   //     }
   //   };
   // }, [imageDataSrc]);
+
+  async function imgURLFetcher(imgID: string) {
+    const imgBody = await fetch("/api/image", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ imageId: imgID }),
+    });
+    if (imgBody.status !== 200) {
+      throw new Error("Cant fetch image from given id..");
+    }
+    const imgData = await imgBody.json();
+    setImageDataSrc(imgData.imageDataSrc);
+  }
 
   async function fetcher() {
     if (!input.trim() && files.length === 0) {
@@ -113,18 +127,8 @@ export default function ChatInterface({}: ChatInterfaceProps) {
               setResponse(json.data.response);
               setOnlyText(json.data.textWithPic);
               if (json.data.imgId) {
-                const imgBody = await fetch("/api/image", {
-                  method: "POST",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({ imageId: json.data.imgId }),
-                });
-                if (imgBody.status !== 200) {
-                  throw new Error("Cant fetch image from given id..");
-                }
-                const imgData = await imgBody.json();
-                setImageDataSrc(imgData.imageDataSrc);
+                const imgID = json.data.imgId;
+                imgURLFetcher(imgID);
               }
               setModel(json.data.effectiveModel);
             } else if (json.type === "meta") {
@@ -177,7 +181,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
             loading={loading}
             onSubmit={onSubmitHandler}
             disabled={loading}
-            // response= {response}
           />
         </div>
       </div>
