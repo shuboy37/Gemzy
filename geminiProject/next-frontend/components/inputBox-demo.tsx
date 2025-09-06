@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/Button";
 import { ArrowUp, ImageUp, Square, X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { motion } from "motion/react";
 
 import { ModelDropdown } from "@/components/ui/ReusableUI";
 
@@ -113,13 +114,13 @@ export function PromptInputWithActions({
       <PromptInputTextarea />
 
       <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <PromptInputAction tooltip="Attach files">
             <label
               htmlFor="file-upload"
-              className={`flex h-8 w-8 items-center justify-center rounded-2xl ${
+              className={`flex h-9 w-9 items-center justify-center rounded-md ${
                 model === "gemini-2.0-flash"
-                  ? "cursor-pointer hover:bg-gray-600"
+                  ? "cursor-pointer hover:bg-neutral-800"
                   : "pointer-events-none cursor-not-allowed opacity-50"
               }`}
             >
@@ -140,7 +141,7 @@ export function PromptInputWithActions({
             disabled={isOpen}
             // isDropOpen={isDropOpen}
           >
-            <div className="h-8 w-8 cursor-pointer rounded-2xl hover:bg-gray-600">
+            <div className="h-8 w-8 cursor-pointer rounded-md hover:bg-neutral-800">
               <ModelDropdown
                 onFlashClick={() => setModel("gemini-2.0-flash")}
                 onImageGenClick={() =>
