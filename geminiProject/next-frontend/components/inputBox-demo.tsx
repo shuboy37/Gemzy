@@ -95,14 +95,16 @@ export function PromptInputWithActions({
                   "pointer-events-none cursor-not-allowed"
                 }`}
               />
-              <span className="max-w-[120px] truncate">{file.name}</span>
+              <span className="max-w-[120px] -translate-y-[0.9px] truncate">
+                {file.name}
+              </span>
               {(() => {
                 console.log(file.name);
                 return null;
               })()}
               <button
                 onClick={() => handleRemoveFile(index)}
-                className="rounded-full p-1 hover:bg-black"
+                className="translate-y-0.25 rounded-full p-1 hover:bg-black"
               >
                 <X className="size-4" />
               </button>
