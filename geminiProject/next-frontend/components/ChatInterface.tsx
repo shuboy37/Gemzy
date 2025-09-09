@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 // import { useEffect } from "react";
-// import Image from "next/image";
 import { Textarea } from "@/components/ui/TextArea";
 import { PromptInputWithActions } from "@/components/inputBox-demo";
 import { Orb } from "@/components/ui/Orb";
