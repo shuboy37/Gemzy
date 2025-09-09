@@ -53,6 +53,10 @@ export function ModelDropdown({
         <motion.div
           animate={{ rotate: isOpen ? 180 : 0 }}
           transition={{
+            type: "spring",
+            stiffness: 500,
+            damping: 30,
+            mass: 1,
             ease: "easeInOut",
             duration: 0.2,
           }}
@@ -106,10 +110,8 @@ export function ModelDropdown({
                 className="flex cursor-pointer items-center px-4 py-2 text-white"
               >
                 <div className="mr-2">
-                  {model === "gemini-2.0-flash" ? (
+                  {model === "gemini-2.0-flash" && (
                     <Check className="h-4 w-4" />
-                  ) : (
-                    " "
                   )}
                 </div>
                 <span>Gemini-2.0-flash</span>
@@ -137,10 +139,8 @@ export function ModelDropdown({
                 }`}
               >
                 <div className="mr-2">
-                  {model === "gemini-2.0-flash-exp-image-generation" ? (
+                  {model === "gemini-2.0-flash-exp-image-generation" && (
                     <Check className="h-4 w-4" />
-                  ) : (
-                    " "
                   )}
                 </div>
                 <span>Gemini-2.0-flash-exp-image-generation</span>
@@ -168,10 +168,8 @@ export function ModelDropdown({
                 }`}
               >
                 <div className="mr-2">
-                  {model === "llama-3.3-70b-versatile" ? (
+                  {model === "llama-3.3-70b-versatile" && (
                     <Check className="h-4 w-4" />
-                  ) : (
-                    " "
                   )}
                 </div>
                 <span>Llama-3.3-70b-versatile</span>
