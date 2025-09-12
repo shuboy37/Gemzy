@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Textarea } from "@/components/ui/TextArea";
 import { PromptInputWithActions } from "@/components/inputBox-demo";
 import { Orb } from "@/components/ui/Orb";
+import axios from "axios";
 
 interface ChatInterfaceProps {}
 
@@ -47,18 +48,19 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   // }, [imageDataSrc]);
 
   async function imgURLFetcher(imgID: string) {
-    const imgBody = await fetch("/api/image", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+    const imgBody = await axios.post(
+      "/api/image",
+      {
+        body: JSON.stringify({ imgId: imgID }),
       },
-      body: JSON.stringify({ imageId: imgID }),
-    });
-    if (imgBody.status !== 200) {
-      throw new Error("Cant fetch image from given id..");
-    }
-    const imgData = await imgBody.json();
-    setImageDataSrc(imgData.imageDataSrc);
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    setImageDataSrc(imgBody.data.imageDataSrc);
   }
 
   async function fetcher() {
