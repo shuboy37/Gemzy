@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 // import { Geist } from "next/font/google";
 import "./globals.css";
 import { DarkRadialLayout } from "@/components/Applayout"; // Import your layout
+import { QueryProvider } from "@/providers/QueryProvider";
 
 // const geist = Geist({
 //   subsets: ["latin"],
@@ -28,7 +29,9 @@ export default function RootLayout({
         <link rel="icon" href="data:," />
       </head>
       <body>
-        <DarkRadialLayout>{children}</DarkRadialLayout>
+        <QueryProvider>
+          <DarkRadialLayout>{children}</DarkRadialLayout>
+        </QueryProvider>
       </body>
     </html>
   );
