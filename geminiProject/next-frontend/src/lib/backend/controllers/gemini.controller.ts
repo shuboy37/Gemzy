@@ -4,8 +4,7 @@ import { getFileUploadService } from "@/lib/backend/services/fileUploadService";
 import { getImageGenService } from "@/lib/backend/services/imageServices";
 import { getGeminiService } from "@/lib/backend/services/geminiSdkService";
 import { getIdAndSaveImage } from "@/lib/backend/services/getIdAndSaveImg";
-
-export const imageCache = new Map<string, string>();
+import { imageCache } from "@/lib/backend/utils/imageCache";
 
 export const handleGemini = (
   input: string,
