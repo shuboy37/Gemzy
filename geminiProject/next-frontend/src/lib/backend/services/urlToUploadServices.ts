@@ -34,7 +34,6 @@ export const getUrlToUploadService = async ({
       config: { displayName },
     });
 
-    // Wait for the file to be processed.
     if (!file.name) {
       throw new Error("File name is missing!");
     }
