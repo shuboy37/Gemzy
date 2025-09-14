@@ -73,7 +73,13 @@ const nextConfig: NextConfig = {
 
   // Compiler optimizations
   compiler: {
-    removeConsole: process.env.NODE_ENV === "production",
+    // Remove console statements in production - keep only console.error for debugging
+    removeConsole:
+      process.env.NODE_ENV === "production"
+        ? {
+            exclude: ["error"], // Keep console.error for critical debugging
+          }
+        : false,
     // Remove React DevTools in production
     reactRemoveProperties:
       process.env.NODE_ENV === "production"
