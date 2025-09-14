@@ -6,6 +6,9 @@ import { Textarea } from "@/components/ui/TextArea";
 import { PromptInputWithActions } from "@/components/inputBox-demo";
 import { Orb } from "@/components/ui/Orb";
 import axios from "axios";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { error } from "console";
+import { ImageDownIcon } from "lucide-react";
 
 interface ChatInterfaceProps {}
 
@@ -47,64 +50,65 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   //   };
   // }, [imageDataSrc]);
 
-  async function imgURLFetcher(imgID: string) {
-    const imgBody = await axios.post(
-      "/api/image",
-      {
-        body: JSON.stringify({ imgId: imgID }),
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
+  const imgURLFetcher = useMutation({
+    mutationFn: async (imgID: string) => {
+      const imgBody = await axios.post(
+        "/api/image",
+        { imageId: imgID },
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return imgBody.data;
+    },
+    onSuccess: (data) => {
+      setImageDataSrc(data.imageDataSrc);
+    },
+    onError: (error) => {
+      console.error("Failed to fetch image:", error);
+      console.error("Error details:", error.message);
+    },
+  });
+
+  const queryFetcher = useMutation({
+    mutationKey: ["response"],
+    onMutate: async (data) => {
+      if (!data.input.trim() && data.files.length === 0) {
+        return;
       }
-    );
 
-    setImageDataSrc(imgBody.data.imageDataSrc);
-  }
-
-  async function fetcher() {
-    if (!input.trim() && files.length === 0) {
-      return;
-    }
-
-    setLoading(true);
-    setResponse("Thinking....");
-    setImageDataSrc(undefined);
-    // setOptimizedImageSrc(null);
-    setOnlyText(false);
-
-    try {
-      const formdata = new FormData();
-      formdata.append("input", input);
-      formdata.append("model", model);
-      files.forEach((file) => {
-        formdata.append("files", file);
-      });
+      setResponse("Thinking....");
+      setImageDataSrc(undefined);
+      setOnlyText(false);
 
       setInput("");
       setFiles([]);
 
+      return { previousInput: data.input, previousFiles: data.files };
+    },
+
+    mutationFn: async (data: {
+      input: string;
+      model: string;
+      files: File[];
+    }) => {
+      const formdata = new FormData();
+      formdata.append("input", data.input);
+      formdata.append("model", data.model);
+      data.files.forEach((file) => {
+        formdata.append("files", file);
+      });
       const stream = await fetch("/api/response", {
         method: "POST",
         body: formdata,
       });
-      console.log(stream);
-      if (!stream.ok) {
-        const errorData = await stream.json();
-        throw new Error(
-          errorData.message || "An error occurred on the server."
-        );
-      }
-
       const reader = stream.body?.getReader();
-      console.log(reader);
       if (!reader) {
         throw new Error("Could not read response stream.");
       }
       const decoder = new TextDecoder("utf-8");
-      console.log(decoder);
-
       while (true) {
         const { done, value } = await reader.read();
         console.log(value);
@@ -129,7 +133,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
               setOnlyText(json.data.textWithPic);
               if (json.data.imgId) {
                 const imgID = json.data.imgId;
-                imgURLFetcher(imgID);
+                imgURLFetcher.mutate(imgID);
               }
               setModel(json.data.effectiveModel);
             } else if (json.type === "meta") {
@@ -138,22 +142,28 @@ export default function ChatInterface({}: ChatInterfaceProps) {
               throw new Error(json.message);
             }
           } catch (e) {
-            console.error("Failed to parse stream chunk:", line);
+            throw new Error(`Failed to parse stream chunk: ${line}`);
           }
         }
       }
-    } catch (error) {
+    },
+    onError: (error, variables, context) => {
       const errorMessage =
         error instanceof Error ? error.message : "An unknown error occurred.";
       setResponse(`Error: ${errorMessage}`);
-      console.error(error);
-    } finally {
-      setLoading(false);
-    }
-  }
+      if (context) {
+        setInput(context.previousInput);
+        setFiles(context.previousFiles);
+      }
+    },
+  });
 
   const onSubmitHandler = () => {
-    fetcher();
+    queryFetcher.mutate({
+      input: input,
+      model: model,
+      files: files,
+    });
   };
 
   const handleOnChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -179,9 +189,9 @@ export default function ChatInterface({}: ChatInterfaceProps) {
             setFiles={setFiles}
             onChange={(e) => handleOnChange(e)}
             value={input}
-            loading={loading}
+            loading={queryFetcher.isPending}
             onSubmit={onSubmitHandler}
-            disabled={loading}
+            disabled={queryFetcher.isPending}
           />
         </div>
       </div>
