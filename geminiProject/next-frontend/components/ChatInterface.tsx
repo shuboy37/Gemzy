@@ -1,14 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
-// import { useEffect } from "react";
+import { useState } from "react";
 import { Textarea } from "@/components/ui/TextArea";
 import { PromptInputWithActions } from "@/components/inputBox-demo";
 import { Orb } from "@/components/ui/Orb";
 import axios from "axios";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { error } from "console";
-import { ImageDownIcon } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 
 interface ChatInterfaceProps {}
 
@@ -20,7 +17,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   // const [optimizedImageSrc, setOptimizedImageSrc] = useState<string | null>(
   //   null
   // );
-  const [loading, setLoading] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [onlyText, setOnlyText] = useState(false);
 

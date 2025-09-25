@@ -171,7 +171,7 @@ function PromptInputActions({
 }
 
 type PromptInputActionProps = {
-  tooltip: string;
+  tooltip?: string;
   disabled?: boolean;
   // isDropOpen?: boolean;
   children: React.ReactNode;
