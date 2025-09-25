@@ -6,6 +6,7 @@ import {
   Images,
   ChevronsUpDown,
 } from "lucide-react";
+import { ConditionalTooltip } from "./ConditionalTooltip";
 
 export const MiniBar = ({
   setIsCollapsible,
@@ -84,13 +85,41 @@ export const MiniBar = ({
     >
       <div className="flex h-full w-full flex-col py-3">
         <div className="flex h-full flex-col items-center rounded-3xl">
-          <MessageSquarePlus className="h-10 w-10 flex-1 cursor-pointer rounded-3xl p-2 text-white transition-all ease-in-out hover:scale-110 hover:bg-black/75" />
-          <Search className="h-10 w-10 flex-1 cursor-pointer rounded-3xl p-2 text-white transition-all ease-in-out hover:scale-110 hover:bg-black/75" />
-          <ChevronsUpDown
-            onClick={() => setIsCollapsible(false)}
-            className="h-10 w-10 flex-1 cursor-pointer rounded-3xl p-2 text-white transition-all ease-in-out hover:scale-110 hover:bg-black/75"
-          />
-          <Images className="h-10 w-10 flex-1 cursor-pointer rounded-3xl p-2 text-white transition-all ease-in-out hover:scale-110 hover:bg-black/75" />
+          <ConditionalTooltip
+            content="New chat"
+            showTooltip={true}
+            side="right"
+            className="ml-0"
+          >
+            <MessageSquarePlus className="h-10 w-10 flex-1 cursor-pointer rounded-3xl p-2 text-white transition-all ease-in-out hover:scale-110 hover:bg-black/75" />
+          </ConditionalTooltip>
+          <ConditionalTooltip
+            content="Search"
+            showTooltip={true}
+            side="right"
+            className="ml-0"
+          >
+            <Search className="h-10 w-10 flex-1 cursor-pointer rounded-3xl p-2 text-white transition-all ease-in-out hover:scale-110 hover:bg-black/75" />
+          </ConditionalTooltip>
+          <ConditionalTooltip
+            content="Expand Sidebar"
+            showTooltip={true}
+            side="right"
+            className="ml-0"
+          >
+            <ChevronsUpDown
+              onClick={() => setIsCollapsible(false)}
+              className="h-10 w-10 flex-1 cursor-pointer rounded-3xl p-2 text-white transition-all ease-in-out hover:scale-110 hover:bg-black/75"
+            />
+          </ConditionalTooltip>
+          <ConditionalTooltip
+            content="Images"
+            showTooltip={true}
+            side="right"
+            className="ml-0"
+          >
+            <Images className="h-10 w-10 flex-1 cursor-pointer rounded-3xl p-2 text-white transition-all ease-in-out hover:scale-110 hover:bg-black/75" />
+          </ConditionalTooltip>
         </div>
       </div>
     </div>

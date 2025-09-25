@@ -23,6 +23,7 @@ import {
   DropdownMenuTrigger,
   DropdownMenuItem,
 } from "./dropdown-menu";
+import { ConditionalTooltip } from "./ConditionalTooltip";
 export const Sidebar = () => {
   const [isCollapsible, setIsCollapsible] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -104,17 +105,37 @@ export const Sidebar = () => {
     {
       name: "New Chat",
       href: "/new-chat",
-      icon: <MessageSquarePlus className="h-6 w-6" />,
+      icon: (
+        <ConditionalTooltip
+          content="New Chat"
+          side="right"
+          showTooltip={!isOpen}
+        >
+          <MessageSquarePlus className="h-6 w-6" />
+        </ConditionalTooltip>
+      ),
     },
     {
       name: "Search",
       href: "/search",
-      icon: <Search className="h-6 w-6" />,
+      icon: (
+        <ConditionalTooltip content="Search" side="right" showTooltip={!isOpen}>
+          <Search className="h-6 w-6" />
+        </ConditionalTooltip>
+      ),
     },
     {
       name: "Library",
       href: "/library",
-      icon: <Images className="h-6 w-6" />,
+      icon: (
+        <ConditionalTooltip
+          content="Library"
+          side="right"
+          showTooltip={!isOpen}
+        >
+          <Images className="h-6 w-6" />
+        </ConditionalTooltip>
+      ),
     },
   ];
 
@@ -139,35 +160,57 @@ export const Sidebar = () => {
         }`}
       >
         <motion.div className="flex h-20 w-full flex-shrink-0 items-center gap-28 p-2">
-          <button
-            onClick={handleClick}
-            onMouseLeave={!isOpen ? () => setIsHoverable(false) : undefined}
-            onMouseEnter={!isOpen ? () => setIsHoverable(true) : undefined}
-            className={`flex h-12 w-12 items-center justify-center rounded-lg px-2 transition-all ease-in-out hover:bg-neutral-700 ${
-              isOpen && ""
-            }`}
+          <ConditionalTooltip
+            content="Toggle Sidebar"
+            side="right"
+            showTooltip={!isOpen}
           >
-            {isHoverable && !isOpen && (
-              <PanelRightClose className="h-7 w-7 text-white" />
-            )}
-            {(!isHoverable || isOpen) && (
-              <LogoSVG className="transition-colors duration-200" />
-            )}
-          </button>
+            <button
+              onClick={handleClick}
+              onMouseLeave={!isOpen ? () => setIsHoverable(false) : undefined}
+              onMouseEnter={!isOpen ? () => setIsHoverable(true) : undefined}
+              className={`flex h-12 w-12 items-center justify-center rounded-lg px-2 transition-all ease-in-out hover:bg-neutral-700 ${
+                isOpen && ""
+              }`}
+            >
+              {isHoverable && !isOpen && (
+                <PanelRightClose className="h-7 w-7 text-white" />
+              )}
+              {(!isHoverable || isOpen) && (
+                <LogoSVG className="transition-colors duration-200" />
+              )}
+            </button>
+          </ConditionalTooltip>
+
           {isOpen && (
             <div className="flex w-1/3 items-center space-x-3">
-              <button
-                onClick={() => setIsCollapsible(true)}
-                className="rounded-lg p-2 hover:bg-neutral-700"
+              <ConditionalTooltip
+                content="Collapse Sidebar"
+                side="bottom"
+                showTooltip={isOpen}
+                className="p-1.5 text-sm"
               >
-                <ChevronsDownUp className="h-5 w-5 text-white" />
-              </button>
-              <button
-                onClick={() => setIsOpen(!isOpen)}
-                className="rounded-lg p-2 hover:bg-neutral-700"
+                <button
+                  onClick={() => setIsCollapsible(true)}
+                  className="rounded-lg p-2 hover:bg-neutral-700"
+                >
+                  <ChevronsDownUp className="h-5 w-5 text-white" />
+                </button>
+              </ConditionalTooltip>
+
+              <ConditionalTooltip
+                content="Toggle Sidebar"
+                side="bottom"
+                showTooltip={isOpen}
+                className="p-1.5 text-sm"
               >
-                <PanelLeftClose className="h-6 w-6 text-white" />
-              </button>
+                <button
+                  onClick={() => setIsOpen(!isOpen)}
+                  className="rounded-lg p-2 hover:bg-neutral-700"
+                >
+                  <PanelLeftClose className="h-6 w-6 text-white" />
+                </button>
+              </ConditionalTooltip>
             </div>
           )}
         </motion.div>
@@ -184,9 +227,9 @@ export const Sidebar = () => {
             }
           >
             {isOpen
-              ? links.map((link) => (
+              ? links.map((link, index) => (
                   <motion.button
-                    key={link.name}
+                    key={index}
                     initial="closed"
                     animate={isOpen ? "open" : "closed"}
                     variants={childVars}
@@ -200,9 +243,9 @@ export const Sidebar = () => {
                     </span>
                   </motion.button>
                 ))
-              : links.map((link) => (
+              : links.map((link, index) => (
                   <motion.button
-                    key={link.name}
+                    key={index}
                     initial="closed"
                     animate={isOpen ? "open" : "closed"}
                     variants={childVars}

@@ -12,6 +12,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 
 import { ModelDropdown } from "@/components/ui/ReusableUI";
+import { ConditionalTooltip } from "./ui/ConditionalTooltip";
 
 type PromptInputWithActionsProps = {
   model: string;
@@ -117,46 +118,59 @@ export function PromptInputWithActions({
 
       <PromptInputActions className="flex items-center justify-between gap-2 pt-2">
         <div className="flex items-center gap-3">
-          <PromptInputAction tooltip="Attach files">
-            <label
-              htmlFor="file-upload"
-              className={`flex h-9 w-9 items-center justify-center rounded-md ${
-                model === "gemini-2.0-flash"
-                  ? "cursor-pointer hover:bg-neutral-800"
-                  : "pointer-events-none cursor-not-allowed opacity-50"
-              }`}
+          <PromptInputAction>
+            <ConditionalTooltip
+              content="Attach files"
+              showTooltip={true}
+              side="top"
+              className="p-2 text-sm"
             >
-              <input
-                type="file"
-                multiple
-                onChange={handleFileChange}
-                className="hidden"
-                id="file-upload"
-                ref={uploadInputRef}
-                disabled={model !== "gemini-2.0-flash"}
-              />
-              <ImageUp className="size-5 text-white" />
-            </label>
+              <label
+                htmlFor="file-upload"
+                className={`flex h-9 w-9 items-center justify-center rounded-md ${
+                  model === "gemini-2.0-flash"
+                    ? "cursor-pointer hover:bg-neutral-800"
+                    : "pointer-events-none cursor-not-allowed opacity-50"
+                }`}
+              >
+                <input
+                  type="file"
+                  multiple
+                  onChange={handleFileChange}
+                  className="hidden"
+                  id="file-upload"
+                  ref={uploadInputRef}
+                  disabled={model !== "gemini-2.0-flash"}
+                />
+                <ImageUp className="size-5 text-white" />
+              </label>
+            </ConditionalTooltip>
           </PromptInputAction>
           <PromptInputAction
-            tooltip="Choose Model"
             disabled={isOpen}
             // isDropOpen={isDropOpen}
           >
-            <div className="h-8 w-8 cursor-pointer rounded-md hover:bg-neutral-800">
-              <ModelDropdown
-                onFlashClick={() => setModel("gemini-2.0-flash")}
-                onImageGenClick={() =>
-                  setModel("gemini-2.0-flash-exp-image-generation")
-                }
-                onGroqClick={() => setModel("llama-3.3-70b-versatile")}
-                model={model}
-                isOpen={isOpen}
-                setIsOpen={setIsOpen}
-                // setIsDropOpen={setIsDropOpen}
-                files={files}
-              />
-            </div>
+            <ConditionalTooltip
+              content="Choose Model"
+              showTooltip={true}
+              side="top"
+              className="p-2 text-sm"
+            >
+              <div className="h-8 w-8 cursor-pointer rounded-md hover:bg-neutral-800">
+                <ModelDropdown
+                  onFlashClick={() => setModel("gemini-2.0-flash")}
+                  onImageGenClick={() =>
+                    setModel("gemini-2.0-flash-exp-image-generation")
+                  }
+                  onGroqClick={() => setModel("llama-3.3-70b-versatile")}
+                  model={model}
+                  isOpen={isOpen}
+                  setIsOpen={setIsOpen}
+                  // setIsDropOpen={setIsDropOpen}
+                  files={files}
+                />
+              </div>
+            </ConditionalTooltip>
           </PromptInputAction>
         </div>
 
