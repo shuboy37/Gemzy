@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 // import { Geist } from "next/font/google";
 import "./globals.css";
-import { DarkRadialLayout } from "@/components/Applayout"; // Import your layout
+import { DarkRadialLayout } from "@/components/Applayout";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { Toaster } from "react-hot-toast";
 
 // const geist = Geist({
 //   subsets: ["latin"],
@@ -30,7 +31,10 @@ export default function RootLayout({
       </head>
       <body>
         <QueryProvider>
-          <DarkRadialLayout>{children}</DarkRadialLayout>
+          <DarkRadialLayout>
+            <Toaster position="top-right" />
+            {children}
+          </DarkRadialLayout>
         </QueryProvider>
       </body>
     </html>
