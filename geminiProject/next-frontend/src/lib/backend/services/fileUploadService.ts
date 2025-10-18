@@ -8,8 +8,8 @@ interface getFileUploadServiceProps {
 export const getFileUploadService = async ({
   files,
 }: getFileUploadServiceProps) => {
-  let contentArr: (string | Part)[] = [];
-  let imagesArray: Part[] = [];
+  const contentArr: (string | Part)[] = [];
+  const imagesArray: Part[] = [];
   for (const fileObj of files) {
     console.log("fileObj:", fileObj);
 

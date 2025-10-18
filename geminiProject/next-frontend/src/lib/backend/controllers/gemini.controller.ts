@@ -18,7 +18,7 @@ export const handleGemini = (
           `[handleGemini] Starting process for model: ${effectiveModel}`
         );
         let content: (string | Part)[] = [];
-        let imagesArr: Part[] = [];
+        const imagesArr: Part[] = [];
 
         const regex =
           /(?:https?:\/\/)?(?:www\.)?[\w-]+(?:\.[\w.-]+)+(?:\/[\w\-./?%&=]*)?\.pdf/gi;
