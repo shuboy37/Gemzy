@@ -205,3 +205,24 @@ button:disabled {
     0 0 10px #ffffff,
     0 0 20px #ffd23f;
 }
+
+.swiper-slide {
+  height: auto !important;
+}
+.swiper-wrapper {
+  align-items: stretch !important;
+}
+
+/* Lexical Placeholder Styles */
+.show-placeholder {
+  position: relative;
+}
+
+.show-placeholder::before {
+  content: var(--placeholder);
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.6;
+  color: #9ca3af; /* gray-400 */
+  font-weight: 600; /* font-semibold to match the input text */
+}

@@ -1,14 +1,35 @@
+"use client";
+
 import { Sidebar } from "@/components/ui/Sidebar";
 import { NavBar } from "@/components/ui/NavBar";
 import dynamic from "next/dynamic";
+import { LexicalComposer } from "@lexical/react/LexicalComposer";
+import ChatInterface from "@/components/ChatInterface";
+import { AttachmentsProvider } from "@/hooks/use-attachments";
+import { lexicalConfig } from "@/lib/lexical-config";
 
-const ChatInterface = dynamic(() => import("@/components/ChatInterface"), {
-  loading: () => (
-    <div className="flex h-64 w-full items-center justify-center">
-      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
-    </div>
-  ),
-});
+// const ChatInterface = dynamic(() => import("@/components/ChatInterface"), {
+//   loading: () => (
+//     <div className="flex h-64 w-full items-center justify-center">
+//       <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
+//     </div>
+//   ),
+// });
+
+const initialConfig = {
+  namespace: "chat-input",
+  theme: {
+    text: {
+      bold: "font-bold",
+      italic: "italic",
+      underline: "underline",
+    },
+  },
+  onError: (error: Error) => {
+    console.error("[Chat Editor Error]", error);
+  },
+  nodes: [],
+};
 
 export default function Home() {
   return (
@@ -20,7 +41,11 @@ export default function Home() {
         <div className="w-full">
           <NavBar />
         </div>
-        <ChatInterface />
+        <AttachmentsProvider>
+          <LexicalComposer initialConfig={lexicalConfig}>
+            <ChatInterface />{" "}
+          </LexicalComposer>
+        </AttachmentsProvider>
       </div>
     </div>
   );
