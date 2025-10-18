@@ -1,17 +1,30 @@
 "use client";
-
-import { useState } from "react";
+import React from "react";
+import { useState, useEffect, useContext, useCallback } from "react";
 import { Textarea } from "@/components/ui/TextArea";
-import { PromptInputWithActions } from "@/components/inputBox-demo";
+// import { PromptInputWithActions } from "@/components/inputBox-demo";
 import { Orb } from "@/components/ui/Orb";
 import axios from "axios";
 import { useMutation } from "@tanstack/react-query";
-
+import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import {
+  $createParagraphNode,
+  $createTextNode,
+  $getRoot,
+  $getSelection,
+  $isRangeSelection,
+  COMMAND_PRIORITY_EDITOR,
+  COMMAND_PRIORITY_HIGH,
+  KEY_ENTER_COMMAND,
+  PASTE_COMMAND,
+} from "lexical";
+import { FileUpload } from "./ui/FileUpload";
+import { useAttachments } from "@/hooks/use-attachments";
+import { Chatbox } from "./Chatbox";
 interface ChatInterfaceProps {}
 
 export default function ChatInterface({}: ChatInterfaceProps) {
   const [response, setResponse] = useState("");
-  const [input, setInput] = useState("");
   const [model, setModel] = useState("gemini-2.0-flash");
   const [imageDataSrc, setImageDataSrc] = useState<string | undefined>("");
   // const [optimizedImageSrc, setOptimizedImageSrc] = useState<string | null>(
@@ -19,6 +32,8 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   // );
   const [files, setFiles] = useState<File[]>([]);
   const [onlyText, setOnlyText] = useState(false);
+  const { addChatAttachment, attachments, removeAttachment } = useAttachments();
+  const [editor] = useLexicalComposerContext();
 
   // Convert data URL to blob URL for Next.js Image optimization
   // useEffect(() => {
@@ -69,7 +84,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   });
 
   const queryFetcher = useMutation({
-    mutationKey: ["response"],
     onMutate: async (data) => {
       if (!data.input.trim() && data.files.length === 0) {
         return;
@@ -79,8 +93,11 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       setImageDataSrc(undefined);
       setOnlyText(false);
 
-      setInput("");
       setFiles([]);
+
+      attachments.forEach((attachment) => {
+        removeAttachment({ id: attachment.id });
+      });
 
       return { previousInput: data.input, previousFiles: data.files };
     },
@@ -148,23 +165,101 @@ export default function ChatInterface({}: ChatInterfaceProps) {
         error instanceof Error ? error.message : "An unknown error occurred.";
       setResponse(`Error: ${errorMessage}`);
       if (context) {
-        setInput(context.previousInput);
         setFiles(context.previousFiles);
+        editor.update(() => {
+          const root = $getRoot();
+          root.clear();
+          const paragraph = $createParagraphNode();
+          const textNode = $createTextNode(context.previousInput);
+          paragraph.append(textNode);
+          paragraph.selectEnd();
+          root.append(paragraph);
+        });
       }
     },
   });
 
-  const onSubmitHandler = () => {
+  const onSubmit = (text: string) => {
     queryFetcher.mutate({
-      input: input,
+      input: text,
       model: model,
       files: files,
     });
   };
 
-  const handleOnChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setInput(e.target.value);
+  const onSubmitHandler = () => {
+    const text = editor.read(() => $getRoot().getTextContent().trim());
+
+    onSubmit(text);
+
+    editor.update(() => {
+      const root = $getRoot();
+      root.clear();
+      root.append($createParagraphNode());
+    });
   };
+  const handleAddedFiles = useCallback(
+    (newFiles: File[]) => {
+      setFiles((prev) => [...prev, ...newFiles]);
+      newFiles.forEach(addChatAttachment);
+    },
+    [addChatAttachment]
+  );
+
+  useEffect(() => {
+    const removeCommand = editor?.registerCommand(
+      KEY_ENTER_COMMAND,
+      (event: KeyboardEvent | null) => {
+        if (event && !event.shiftKey) {
+          event.preventDefault();
+
+          editor.update(() => {
+            const root = $getRoot();
+            const text = root.getTextContent().trim();
+            if (!text) return;
+
+            onSubmit(text);
+
+            root.clear();
+            const paragraph = $createParagraphNode();
+            root.append(paragraph);
+          });
+        }
+
+        return true;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    const removePasteCommand = editor.registerCommand<ClipboardEvent>(
+      PASTE_COMMAND,
+      (event) => {
+        const pastedText = event.clipboardData?.getData("Text");
+
+        if (pastedText) {
+          const trimmedText = pastedText.trim();
+
+          if (trimmedText !== pastedText) {
+            editor.update(() => {
+              const selection = $getSelection();
+              if ($isRangeSelection(selection)) {
+                selection.insertText(trimmedText);
+              }
+            });
+            return true;
+          }
+        }
+
+        return false;
+      },
+      COMMAND_PRIORITY_HIGH
+    );
+
+    return () => {
+      removeCommand?.();
+      removePasteCommand?.();
+    };
+  }, [editor, onSubmit]);
 
   return (
     <div className="flex h-full w-full flex-col items-center space-y-20 pb-16">
@@ -176,22 +271,33 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           </h1>
         </div>
       )}
-      <div className="w-full max-w-4xl items-center">
+      <FileUpload onFilesAdded={handleAddedFiles}>
         <div className="flex w-full items-center justify-center">
-          <PromptInputWithActions
+          <div className="w-full max-w-2xl">
+            <Chatbox
+              onSubmitHandler={onSubmitHandler}
+              handleAddedFiles={handleAddedFiles}
+              disabled={queryFetcher.isPending}
+              model={model}
+              setModel={setModel}
+              files={files}
+              // setFiles={setFiles}
+            />
+          </div>
+        </div>
+
+        {/* <PromptInputWithActions
             model={model}
             setModel={setModel}
             files={files}
             setFiles={setFiles}
-            onChange={(e) => handleOnChange(e)}
+            // onChange={(e) => handleOnChange(e)}
             value={input}
             loading={queryFetcher.isPending}
             onSubmit={onSubmitHandler}
             disabled={queryFetcher.isPending}
-          />
-        </div>
-      </div>
-
+          /> */}
+      </FileUpload>
       <div className="mt-10 flex w-full max-w-3xl flex-col items-center space-y-6 bg-black">
         {response &&
           (imageDataSrc || onlyText ? (
