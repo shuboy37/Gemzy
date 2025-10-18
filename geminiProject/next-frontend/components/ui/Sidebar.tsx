@@ -164,6 +164,7 @@ export const Sidebar = () => {
             content="Toggle Sidebar"
             side="right"
             showTooltip={!isOpen}
+            className="ml-0"
           >
             <button
               onClick={handleClick}

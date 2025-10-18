@@ -62,7 +62,7 @@ export function ModelDropdown({
           }}
         >
           <ChevronDown
-            className="h-8 w-8 rounded-md p-1 text-white hover:bg-neutral-800"
+            className="h-8 w-8 rounded-md p-1 text-stone-600"
             strokeOpacity="1"
           />
         </motion.div>
