@@ -281,22 +281,10 @@ export default function ChatInterface({}: ChatInterfaceProps) {
               model={model}
               setModel={setModel}
               files={files}
-              // setFiles={setFiles}
+              setFiles={setFiles}
             />
           </div>
         </div>
-
-        {/* <PromptInputWithActions
-            model={model}
-            setModel={setModel}
-            files={files}
-            setFiles={setFiles}
-            // onChange={(e) => handleOnChange(e)}
-            value={input}
-            loading={queryFetcher.isPending}
-            onSubmit={onSubmitHandler}
-            disabled={queryFetcher.isPending}
-          /> */}
       </FileUpload>
       <div className="mt-10 flex w-full max-w-3xl flex-col items-center space-y-6 bg-black">
         {response &&

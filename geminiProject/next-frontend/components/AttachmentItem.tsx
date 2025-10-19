@@ -114,29 +114,21 @@ function ImageAttachment({
   });
 
   const getImageUrl = () => {
-    console.log("🔍 getImageUrl debug:", attachment);
-
-    if (getImageURL.isLoading) {
-    }
-
     if (getImageURL.error) {
-      console.error("Failed to fetch presigned URL:", getImageURL.error);
+      console.error("Failed to fetch presigned URL");
       toast.error("Failed to load image, please try again later.");
     }
 
     // 1. If we have presigned S3 URL (most secure)
     if (getImageURL.data) {
-      console.log("✅ Using presigned S3 URL", getImageURL.data);
       return getImageURL.data;
     }
 
     // 2. If it's a LocalAttachment with localUrl (during upload)
     if ("localUrl" in attachment && attachment.localUrl) {
-      console.log("🔄 Using local URL:", attachment.localUrl);
       return attachment.localUrl;
     }
 
-    console.log("❌ Using fallback");
     return "/placeholder-image.png"; // Fallback
   }; // Progress circle calculation
   const circumference = 2 * Math.PI * 12;
@@ -150,7 +142,7 @@ function ImageAttachment({
         <Dialog open={isModalOpen}>
           <DialogTrigger asChild>
             <button
-              className="size-32 cursor-pointer rounded-md transition-opacity hover:scale-102 focus:outline-none"
+              className="group size-32 cursor-pointer overflow-hidden rounded-md focus:outline-none"
               onClick={(e) => {
                 e.stopPropagation();
                 setIsModalOpen(true);
@@ -159,14 +151,8 @@ function ImageAttachment({
               <img
                 src={getImageUrl()}
                 alt={attachment.title}
-                className="pointer-events-none size-32 rounded-md object-cover object-center"
-                onLoad={() =>
-                  console.log("Image loaded successfully:", getImageUrl())
-                }
-                onError={(e) => {
-                  console.error("Image failed to load:", getImageUrl());
-                  console.error("Error event:", e);
-                }}
+                draggable={false}
+                className="size-32 rounded-md object-cover object-center transition-transform duration-300 ease-out group-hover:scale-110"
               />
             </button>
           </DialogTrigger>

@@ -40,7 +40,7 @@ interface ChatboxProps {
   model: string;
   setModel: (model: string) => void;
   files: File[];
-  // setFiles: React.Dispatch<React.SetStateAction<File[]>>;
+  setFiles: React.Dispatch<React.SetStateAction<File[]>>;
 }
 
 export const Chatbox = ({
@@ -50,7 +50,7 @@ export const Chatbox = ({
   model,
   setModel,
   files,
-  // setFiles,
+  setFiles,
 }: ChatboxProps) => {
   const [editor] = useLexicalComposerContext();
   const [isFocused, setIsFocused] = useState(false);
@@ -98,26 +98,6 @@ export const Chatbox = ({
   );
   return (
     <div className="w-full">
-      <div className="mb-2 flex items-center gap-2">
-        {attachments.map((attachment, i) => {
-          const onRemove = () => removeAttachment({ id: attachment.id });
-          return (
-            <motion.div
-              key={attachment.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.2, delay: i * 0.1 }}
-            >
-              <AttachmentItem
-                onRemove={onRemove}
-                key={attachment.id}
-                attachment={attachment}
-              />
-            </motion.div>
-          );
-        })}
-      </div>
       <div className="w-full space-y-3">
         <div
           className={`relative w-full rounded-xl transition-all duration-300 ease-out ${
@@ -136,6 +116,7 @@ export const Chatbox = ({
               </p>
             </div>
           )}
+
           <div className="relative w-full">
             {originalText && (
               <div className="absolute inset-0 z-10 flex items-start px-4 py-3">
@@ -156,6 +137,30 @@ export const Chatbox = ({
                 hasContent && "shimmer-active border-transparent bg-black"
               } ${isFocused && "ring-1 ring-indigo-600 ring-offset-2"}`}
             >
+              <div
+                className={`flex items-center gap-2 ${attachments.length > 0 && "p-2"}`}
+              >
+                {attachments.map((attachment, i) => {
+                  const onRemove = () =>
+                    removeAttachment({ id: attachment.id });
+                  setFiles([]);
+                  return (
+                    <motion.div
+                      key={attachment.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      transition={{ duration: 0.2, delay: i * 0.1 }}
+                    >
+                      <AttachmentItem
+                        onRemove={onRemove}
+                        key={attachment.id}
+                        attachment={attachment}
+                      />
+                    </motion.div>
+                  );
+                })}
+              </div>
               <PlainTextPlugin
                 contentEditable={
                   <ContentEditable
@@ -179,14 +184,16 @@ export const Chatbox = ({
                     content="Attach a file"
                     side="top"
                     showTooltip={true}
+                    className="p-2 text-xs"
                   >
                     <FileUploadTrigger asChild>
                       <DuolingoButton
                         type="button"
                         variant="secondary"
                         size="icon"
+                        className="bg-stone-800"
                       >
-                        <Paperclip className="size-5 text-stone-600" />
+                        <Paperclip className="size-5 text-stone-50" />
                       </DuolingoButton>
                     </FileUploadTrigger>
                   </ConditionalTooltip>
@@ -194,11 +201,13 @@ export const Chatbox = ({
                     content="Choose Model"
                     showTooltip={true}
                     side="top"
+                    className="p-2 text-xs"
                   >
                     <DuolingoButton
                       type="button"
                       variant="secondary"
                       size="icon"
+                      className="bg-stone-800"
                     >
                       <ModelDropdown
                         onFlashClick={() => setModel("gemini-2.0-flash")}
