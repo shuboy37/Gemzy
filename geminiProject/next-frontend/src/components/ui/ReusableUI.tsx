@@ -119,24 +119,17 @@ export function ModelDropdown({
 
               <motion.div
                 whileHover={{
-                  backgroundColor:
-                    files.length > 0 ? "transparent" : "rgb(31, 41, 55)",
+                  backgroundColor: "rgb(31, 41, 55)",
                 }}
                 onClick={() => {
-                  if (files.length === 0) {
-                    onImageGenClick();
-                    setIsOpen(false);
-                  }
+                  onImageGenClick();
+                  setIsOpen(false);
                 }}
                 transition={{
                   duration: 0.1,
                   ease: "easeInOut",
                 }}
-                className={`flex items-center px-4 py-2 text-white ${
-                  files.length > 0
-                    ? "cursor-not-allowed opacity-50"
-                    : "cursor-pointer"
-                }`}
+                className={`flex items-center px-4 py-2 text-white`}
               >
                 <div className="mr-2">
                   {model === "gemini-2.0-flash-exp-image-generation" && (

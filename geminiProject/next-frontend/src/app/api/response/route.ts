@@ -27,6 +27,12 @@ export async function POST(req: NextRequest) {
         `[API Route] PDF URL detected with incompatible model '${model}'. Switched to '${effectiveModel}'.`
       );
     }
+    if (files.length > 0 && model !== "gemini-2.0-flash-exp-image-generation") {
+      effectiveModel = "gemini-2.0-flash-exp-image-generation";
+      console.log(
+        `[API Route] Image generation detected with incompatible model '${model}'. Switched to '${effectiveModel}'.`
+      );
+    }
 
     let stream: ReadableStream;
 
