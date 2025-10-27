@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { handleGemini } from "@/lib/backend/controllers/gemini.controller";
-import { handleGroq } from "@/lib/backend/controllers/handleGroq";
+import { handleGemini } from "@/lib/controllers/gemini.controller";
+import { handleGroq } from "@/lib/controllers/handleGroq";
 
 export const dynamic = "force-dynamic";
 

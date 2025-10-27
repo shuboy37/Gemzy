@@ -35,7 +35,6 @@ export const POST = async (req: NextRequest) => {
     Expires: 3600,
     Fields: {
       "Content-Type": fileType,
-      // Remove ACL - keep S3 private for better security
     },
   });
 

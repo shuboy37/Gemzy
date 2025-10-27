@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getImageById } from "@/lib/backend/services/getImageById";
+import { getImageById } from "@/lib/services/getImageById";
 export const POST = async (req: NextRequest) => {
   try {
     const { imageId } = await req.json();

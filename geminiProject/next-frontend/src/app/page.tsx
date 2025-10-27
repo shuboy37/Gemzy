@@ -43,7 +43,7 @@ export default function Home() {
         </div>
         <AttachmentsProvider>
           <LexicalComposer initialConfig={lexicalConfig}>
-            <ChatInterface />{" "}
+            <ChatInterface />
           </LexicalComposer>
         </AttachmentsProvider>
       </div>
