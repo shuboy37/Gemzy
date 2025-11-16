@@ -203,6 +203,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       root.append($createParagraphNode());
     });
   };
+
   const handleAddedFiles = useCallback(
     (newFiles: File[]) => {
       setFiles((prev) => [...prev, ...newFiles]);

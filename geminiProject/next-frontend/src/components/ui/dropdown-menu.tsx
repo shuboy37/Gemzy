@@ -13,10 +13,15 @@ function DropdownMenu({
 }
 
 function DropdownMenuPortal({
+  forceMount,
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Portal>) {
   return (
-    <DropdownMenuPrimitive.Portal data-slot="dropdown-menu-portal" {...props} />
+    <DropdownMenuPrimitive.Portal
+      data-slot="dropdown-menu-portal"
+      forceMount
+      {...props}
+    />
   );
 }
 
@@ -37,7 +42,8 @@ function DropdownMenuContent({
   ...props
 }: React.ComponentProps<typeof DropdownMenuPrimitive.Content>) {
   return (
-    <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Portal forceMount>
+      {/* exit effect of dropdown via motion requires forceMount */}
       <DropdownMenuPrimitive.Content
         data-slot="dropdown-menu-content"
         sideOffset={sideOffset}

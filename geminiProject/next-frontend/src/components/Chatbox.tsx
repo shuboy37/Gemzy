@@ -1,7 +1,7 @@
 "use client";
 import { useState, useContext, useCallback, useEffect } from "react";
-import { Paperclip, Square, ArrowUp } from "lucide-react";
-import { ModelDropdown } from "@/components/ui/ReusableUI";
+import { Paperclip, Square, ArrowUp, Check, ChevronDown } from "lucide-react";
+// import { ModelDropdown } from "@/components/ui/DropdownContent";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
 import { LexicalErrorBoundary } from "@lexical/react/LexicalErrorBoundary";
@@ -29,9 +29,14 @@ import {
 } from "./ui/FileUpload";
 import DuolingoButton from "./ui/DuolingoButton";
 import { TextShimmer } from "./ui/TextShimmer";
-import { motion } from "motion/react";
+import { motion, AnimatePresence } from "motion/react";
 import { useAttachments } from "@/hooks/use-attachments";
 import { AttachmentItem } from "./AttachmentItem";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+} from "./ui/dropdown-menu";
 
 interface ChatboxProps {
   onSubmitHandler: () => void;
@@ -201,33 +206,168 @@ export const Chatbox = ({
                       </DuolingoButton>
                     </FileUploadTrigger>
                   </ConditionalTooltip>
-                  <ConditionalTooltip
-                    content="Choose Model"
-                    showTooltip={true}
-                    side="top"
-                    className="p-2 text-xs"
-                  >
-                    <DuolingoButton
-                      type="button"
-                      variant="secondary"
-                      size="icon"
-                      className="bg-stone-800"
+                  <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
+                    <ConditionalTooltip
+                      content="Choose Model"
+                      showTooltip={true}
+                      side="top"
+                      className="p-2 text-xs"
                     >
-                      <ModelDropdown
-                        onFlashClick={() => setModel("gemini-2.0-flash")}
-                        onImageGenClick={() =>
-                          setModel("gemini-2.0-flash-exp-image-generation")
-                        }
-                        onGroqClick={() => setModel("llama-3.3-70b-versatile")}
-                        model={model}
-                        isOpen={isOpen}
-                        setIsOpen={setIsOpen}
-                        // setIsDropOpen={setIsDropOpen}
-                        files={files}
-                      />
-                    </DuolingoButton>
-                  </ConditionalTooltip>
+                      <DropdownMenuTrigger asChild>
+                        <DuolingoButton
+                          type="button"
+                          variant="secondary"
+                          size="icon"
+                          className="bg-stone-800"
+                        >
+                          <motion.div className="origin-center cursor-pointer">
+                            <motion.div
+                              animate={{ rotate: isOpen ? 180 : 0 }}
+                              transition={{
+                                type: "spring",
+                                stiffness: 500,
+                                damping: 30,
+                                mass: 1,
+                                ease: "easeInOut",
+                                duration: 0.2,
+                              }}
+                            >
+                              <ChevronDown
+                                className="h-8 w-8 rounded-md p-1 text-stone-50"
+                                strokeOpacity="1"
+                              />
+                            </motion.div>
+                          </motion.div>
+                        </DuolingoButton>
+                      </DropdownMenuTrigger>
+                    </ConditionalTooltip>
+                    <AnimatePresence>
+                      {isOpen && (
+                        <DropdownMenuContent
+                          // forceMount
+                          sideOffset={8}
+                          align="start"
+                          side="top"
+                          avoidCollisions={true}
+                          collisionPadding={16}
+                          className="overflow-hidden border-none"
+                        >
+                          <motion.div
+                            initial={{
+                              opacity: 0,
+                              scale: 0.95,
+                              y: 10,
+                            }}
+                            animate={{
+                              opacity: 1,
+                              scale: 1,
+                              y: 0,
+                            }}
+                            exit={{
+                              opacity: 0,
+                              scale: 0.95,
+                              y: 10,
+                            }}
+                            transition={{
+                              duration: 0.15,
+                              ease: "easeOut",
+                            }}
+                            className="z-50 w-[650px] rounded-xl border-2 border-gray-700 bg-black shadow-lg"
+                          >
+                            <div className="cursor-default border-b-2 border-gray-700 px-4 py-2">
+                              <span className="font-extralight text-white">
+                                Choose Model
+                              </span>
+                            </div>
+
+                            <div className="py-1">
+                              <motion.div
+                                whileHover={{
+                                  backgroundColor: "rgb(31, 41, 55)",
+                                }}
+                                onClick={() => {
+                                  setModel("gemini-2.0-flash");
+                                  setIsOpen(false);
+                                }}
+                                transition={{
+                                  duration: 0.1,
+                                  ease: "easeInOut",
+                                }}
+                                className="flex cursor-pointer items-center px-4 py-2 text-white"
+                              >
+                                <div className="mr-2">
+                                  {model === "gemini-2.0-flash" && (
+                                    <Check className="h-4 w-4" />
+                                  )}
+                                </div>
+                                <span>Gemini-2.0-flash</span>
+                              </motion.div>
+
+                              <motion.div
+                                whileHover={{
+                                  backgroundColor: "rgb(31, 41, 55)",
+                                }}
+                                onClick={() => {
+                                  setModel(
+                                    "gemini-2.0-flash-exp-image-generation"
+                                  );
+                                  setIsOpen(false);
+                                }}
+                                transition={{
+                                  duration: 0.1,
+                                  ease: "easeInOut",
+                                }}
+                                className={`flex items-center px-4 py-2 text-white`}
+                              >
+                                <div className="mr-2">
+                                  {model ===
+                                    "gemini-2.0-flash-exp-image-generation" && (
+                                    <Check className="h-4 w-4" />
+                                  )}
+                                </div>
+                                <span>
+                                  Gemini-2.0-flash-exp-image-generation
+                                </span>
+                              </motion.div>
+
+                              <motion.div
+                                whileHover={{
+                                  backgroundColor:
+                                    files.length > 0
+                                      ? "transparent"
+                                      : "rgb(31, 41, 55)",
+                                }}
+                                onClick={() => {
+                                  if (files.length === 0) {
+                                    setModel("llama-3.3-70b-versatile");
+                                    setIsOpen(false);
+                                  }
+                                }}
+                                transition={{
+                                  duration: 0.1,
+                                  ease: "easeInOut",
+                                }}
+                                className={`flex items-center px-4 py-2 text-white ${
+                                  files.length > 0
+                                    ? "cursor-not-allowed opacity-50"
+                                    : "cursor-pointer"
+                                }`}
+                              >
+                                <div className="mr-2">
+                                  {model === "llama-3.3-70b-versatile" && (
+                                    <Check className="h-4 w-4" />
+                                  )}
+                                </div>
+                                <span>Llama-3.3-70b-versatile</span>
+                              </motion.div>
+                            </div>
+                          </motion.div>
+                        </DropdownMenuContent>
+                      )}
+                    </AnimatePresence>
+                  </DropdownMenu>
                 </div>
+
                 {disabled ? (
                   <DuolingoButton
                     onClick={() => {}}
