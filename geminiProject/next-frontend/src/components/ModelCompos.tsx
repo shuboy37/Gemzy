@@ -1,15 +1,21 @@
-import { Zap, Brain, File, Gem } from "lucide-react";
+import { Zap, Brain, File, Gem, Wand2 } from "lucide-react";
 import React from "react";
 
 interface ModelMascotProps {
-  type: "premium" | "superPremium" | "file-support" | "reasoning" | "fast";
+  type:
+    | "premium"
+    | "superPremium"
+    | "file-support"
+    | "reasoning"
+    | "fast"
+    | "image-generation";
 
-  size: 16;
+  size: number;
   className?: string;
 }
 
 interface IconProps {
-  size: 16;
+  size: number;
   className: string | undefined;
 }
 
@@ -75,6 +81,9 @@ const SuperPremiumIcon = ({ size, className }: IconProps) => {
 const GemIcon = ({ size, className }: IconProps) => {
   return <Gem size={size} className={className} />;
 };
+const Wand2Icon = ({ size, className }: IconProps) => {
+  return <Wand2 size={size} className={className} />;
+};
 
 export const ModelMascot: React.FC<ModelMascotProps> = ({
   type,
@@ -93,6 +102,8 @@ export const ModelMascot: React.FC<ModelMascotProps> = ({
         return <BrainIcon size={size} className={className} />;
       case "fast":
         return <ZapIcon size={size} className={className} />;
+      case "image-generation":
+        return <Wand2Icon size={size} className={className} />;
       default:
         return null;
     }
