@@ -226,3 +226,26 @@ button:disabled {
   color: #9ca3af; /* gray-400 */
   font-weight: 600; /* font-semibold to match the input text */
 }
+
+/* Hide scrollbar but keep scroll functionality */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* Mobile responsive text utility */
+.mobile-text {
+  font-size: 0.875rem; /* text-sm */
+  line-height: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .mobile-text {
+    font-size: 0.875rem; /* sm:text-sm */
+    line-height: 1.25rem;
+  }
+}
