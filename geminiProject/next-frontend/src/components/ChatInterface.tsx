@@ -21,11 +21,13 @@ import {
 import { FileUpload } from "./ui/FileUpload";
 import { useAttachments } from "@/hooks/use-attachments";
 import { Chatbox } from "./Chatbox";
+import { useAtom } from "jotai";
+import { selectedModel } from "@/stores/ModelStore";
 interface ChatInterfaceProps {}
 
 export default function ChatInterface({}: ChatInterfaceProps) {
   const [response, setResponse] = useState("");
-  const [model, setModel] = useState("gemini-2.0-flash");
+  const [model, setModel] = useAtom(selectedModel);
   const [imageDataSrc, setImageDataSrc] = useState<string | undefined>("");
   // const [optimizedImageSrc, setOptimizedImageSrc] = useState<string | null>(
   //   null
@@ -284,8 +286,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
               onSubmitHandler={onSubmitHandler}
               handleAddedFiles={handleAddedFiles}
               disabled={queryFetcher.isPending}
-              model={model}
-              setModel={setModel}
               files={files}
               setFiles={setFiles}
             />

@@ -1,6 +1,8 @@
 "use client";
 import { useState, useContext, useCallback, useEffect } from "react";
 import { Paperclip, Square, ArrowUp, Check, ChevronDown } from "lucide-react";
+import { useAtom } from "jotai";
+import { selectedModel } from "@/stores/ModelStore";
 // import { ModelDropdown } from "@/components/ui/DropdownContent";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { ContentEditable } from "@lexical/react/LexicalContentEditable";
@@ -22,6 +24,8 @@ import {
 import { LexicalComposer } from "@lexical/react/LexicalComposer";
 import { lexicalConfig } from "@/lib/lexical-config";
 import { ConditionalTooltip } from "./ui/ConditionalTooltip";
+import { ModelDropdown } from "./ModelDropdown";
+import { useGetAllModels } from "@/hooks/useGetAllModels";
 import {
   FileUpload,
   FileUploadContext,
@@ -29,7 +33,7 @@ import {
 } from "./ui/FileUpload";
 import DuolingoButton from "./ui/DuolingoButton";
 import { TextShimmer } from "./ui/TextShimmer";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, scale } from "motion/react";
 import { useAttachments } from "@/hooks/use-attachments";
 import { AttachmentItem } from "./AttachmentItem";
 import {
@@ -37,13 +41,12 @@ import {
   DropdownMenuTrigger,
   DropdownMenuContent,
 } from "./ui/dropdown-menu";
+import { getModelConfigByModel } from "@/lib/models";
 
 interface ChatboxProps {
   onSubmitHandler: () => void;
   handleAddedFiles: (files: File[]) => void;
   disabled: boolean;
-  model: string;
-  setModel: (model: string) => void;
   files: File[];
   setFiles: React.Dispatch<React.SetStateAction<File[]>>;
 }
@@ -52,12 +55,11 @@ export const Chatbox = ({
   onSubmitHandler,
   handleAddedFiles,
   disabled,
-  model,
-  setModel,
   files,
   setFiles,
 }: ChatboxProps) => {
   const [editor] = useLexicalComposerContext();
+  const [model] = useAtom(selectedModel);
   const [isFocused, setIsFocused] = useState(false);
   const [hasContent, setHasContent] = useState(false);
   const { attachments, hasUploading, removeAttachment } = useAttachments();
@@ -65,7 +67,11 @@ export const Chatbox = ({
   const { isDragging } = useContext(FileUploadContext);
 
   const [isOpen, setIsOpen] = useState(false);
-
+  const { data: allModelsData } = useGetAllModels();
+  const selectedModelConfig = getModelConfigByModel(
+    model,
+    allModelsData?.allModelsConfigs
+  );
   // Track editor content changes
   useEffect(() => {
     if (!editor) return;
@@ -200,7 +206,7 @@ export const Chatbox = ({
                         variant="secondary"
                         size="icon"
                         className="bg-stone-800"
-                        disabled={!model.startsWith("gemini")}
+                        disabled={!model.startsWith("Gemini")}
                       >
                         <Paperclip className="size-5 text-stone-50" />
                       </DuolingoButton>
@@ -218,9 +224,12 @@ export const Chatbox = ({
                           type="button"
                           variant="secondary"
                           size="icon"
-                          className="bg-stone-800"
+                          className="flex w-fit items-center justify-center rounded-2xl bg-stone-800 outline-none focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
                         >
-                          <motion.div className="origin-center cursor-pointer">
+                          <div className="flex origin-center cursor-pointer items-center justify-between p-4">
+                            <span className="mobile-text min-w-0 truncate text-xs font-medium text-white sm:text-sm">
+                              {selectedModelConfig.displayName}
+                            </span>
                             <motion.div
                               animate={{ rotate: isOpen ? 180 : 0 }}
                               transition={{
@@ -233,18 +242,17 @@ export const Chatbox = ({
                               }}
                             >
                               <ChevronDown
-                                className="h-8 w-8 rounded-md p-1 text-stone-50"
+                                className="size-8 rounded-md p-1 text-stone-50"
                                 strokeOpacity="1"
                               />
                             </motion.div>
-                          </motion.div>
+                          </div>
                         </DuolingoButton>
                       </DropdownMenuTrigger>
                     </ConditionalTooltip>
                     <AnimatePresence>
                       {isOpen && (
                         <DropdownMenuContent
-                          // forceMount
                           sideOffset={8}
                           align="start"
                           side="top"
@@ -272,95 +280,8 @@ export const Chatbox = ({
                               duration: 0.15,
                               ease: "easeOut",
                             }}
-                            className="z-50 w-[650px] rounded-xl border-2 border-gray-700 bg-black shadow-lg"
                           >
-                            <div className="cursor-default border-b-2 border-gray-700 px-4 py-2">
-                              <span className="font-extralight text-white">
-                                Choose Model
-                              </span>
-                            </div>
-
-                            <div className="py-1">
-                              <motion.div
-                                whileHover={{
-                                  backgroundColor: "rgb(31, 41, 55)",
-                                }}
-                                onClick={() => {
-                                  setModel("gemini-2.0-flash");
-                                  setIsOpen(false);
-                                }}
-                                transition={{
-                                  duration: 0.1,
-                                  ease: "easeInOut",
-                                }}
-                                className="flex cursor-pointer items-center px-4 py-2 text-white"
-                              >
-                                <div className="mr-2">
-                                  {model === "gemini-2.0-flash" && (
-                                    <Check className="h-4 w-4" />
-                                  )}
-                                </div>
-                                <span>Gemini-2.0-flash</span>
-                              </motion.div>
-
-                              <motion.div
-                                whileHover={{
-                                  backgroundColor: "rgb(31, 41, 55)",
-                                }}
-                                onClick={() => {
-                                  setModel(
-                                    "gemini-2.0-flash-exp-image-generation"
-                                  );
-                                  setIsOpen(false);
-                                }}
-                                transition={{
-                                  duration: 0.1,
-                                  ease: "easeInOut",
-                                }}
-                                className={`flex items-center px-4 py-2 text-white`}
-                              >
-                                <div className="mr-2">
-                                  {model ===
-                                    "gemini-2.0-flash-exp-image-generation" && (
-                                    <Check className="h-4 w-4" />
-                                  )}
-                                </div>
-                                <span>
-                                  Gemini-2.0-flash-exp-image-generation
-                                </span>
-                              </motion.div>
-
-                              <motion.div
-                                whileHover={{
-                                  backgroundColor:
-                                    files.length > 0
-                                      ? "transparent"
-                                      : "rgb(31, 41, 55)",
-                                }}
-                                onClick={() => {
-                                  if (files.length === 0) {
-                                    setModel("llama-3.3-70b-versatile");
-                                    setIsOpen(false);
-                                  }
-                                }}
-                                transition={{
-                                  duration: 0.1,
-                                  ease: "easeInOut",
-                                }}
-                                className={`flex items-center px-4 py-2 text-white ${
-                                  files.length > 0
-                                    ? "cursor-not-allowed opacity-50"
-                                    : "cursor-pointer"
-                                }`}
-                              >
-                                <div className="mr-2">
-                                  {model === "llama-3.3-70b-versatile" && (
-                                    <Check className="h-4 w-4" />
-                                  )}
-                                </div>
-                                <span>Llama-3.3-70b-versatile</span>
-                              </motion.div>
-                            </div>
+                            <ModelDropdown isPlanMode={false} />
                           </motion.div>
                         </DropdownMenuContent>
                       )}
