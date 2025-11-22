@@ -1,4 +1,8 @@
-import { AIModel, getModelConfigByModel } from "@/lib/models";
+import {
+  AIModel,
+  getModelConfigByModel,
+  ALL_MODEL_CONFIGS,
+} from "@/lib/models";
 import { Check, Bookmark } from "lucide-react";
 import { ModelMascot, getModelIcon } from "./ModelCompos";
 import { ConditionalTooltip } from "./ui/ConditionalTooltip";
@@ -10,6 +14,7 @@ interface ModelCardProps {
   model: AIModel;
   isModelSelected: boolean;
   onHover: (model: AIModel | null) => void;
+  allModelsConfigs?: ALL_MODEL_CONFIGS;
 }
 
 export const ModelCard = ({
@@ -17,8 +22,9 @@ export const ModelCard = ({
   isModelSelected,
   onSelect,
   onHover,
+  allModelsConfigs,
 }: ModelCardProps) => {
-  const modelConfig = getModelConfigByModel(model);
+  const modelConfig = getModelConfigByModel(model, allModelsConfigs);
   const [bookmarkedModels, setBookmarkedModels] = useAtom(bookmarkedModelsAtom);
   const isBookmarked = bookmarkedModels.includes(model);
 
@@ -177,14 +183,14 @@ export const ModelCard = ({
         {/* Selection Indicator */}
         <div
           className={
-            "flex h-4 w-4 items-center justify-center rounded-full border-2 transition-all duration-300 sm:h-5 sm:w-5 " +
+            "flex size-4 items-center justify-center rounded-full border-2 transition-all duration-300 sm:h-5 sm:w-5 " +
             (isModelSelected
               ? "border-gray-700 bg-gray-700"
               : "border-border/50 group-hover:border-gray-700/65")
           }
         >
           {isModelSelected && (
-            <Check className="h-2.5 w-2.5 text-green-500 sm:h-3 sm:w-3" />
+            <Check className="size-2.5 text-green-500 sm:h-3 sm:w-3" />
           )}
         </div>
       </div>

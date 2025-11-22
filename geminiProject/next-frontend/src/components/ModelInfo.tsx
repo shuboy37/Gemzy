@@ -1,10 +1,22 @@
 import { AIModel, getModelConfigByModel } from "@/lib/models";
 import { getModelIcon } from "./ModelCompos";
+import { useGetAllModels } from "@/hooks/useGetAllModels";
 
-export const ModelInfo = ({ model }: { model: AIModel }) => {
-  const modelConfig = getModelConfigByModel(model);
+export const ModelInfo = ({
+  model,
+  className,
+}: {
+  model: AIModel;
+  className?: string;
+}) => {
+  const { data } = useGetAllModels();
+  const modelConfig = getModelConfigByModel(model, data?.allModelsConfigs);
   return (
-    <div className="bg-background/95 hidden h-fit w-[280px] rounded-xl border border-gray-700 p-4 backdrop-blur-xl md:block">
+    <div
+      className={`bg-background/95 hidden w-[280px] rounded-xl border border-gray-700 p-4 backdrop-blur-xl md:block ${
+        className || ""
+      }`}
+    >
       {/* Model Icon and Name */}
       <div className="mb-3 flex items-center gap-3">
         <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-100">
@@ -28,7 +40,7 @@ export const ModelInfo = ({ model }: { model: AIModel }) => {
         <div className="flex flex-col gap-1.5">
           {!modelConfig.isImageGeneration && (
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <div className="h-1.5 w-1.5 rounded-full bg-cyan-500"></div>
+              <div className="size-1.5 rounded-full bg-cyan-500"></div>
               <span>1 credit per message</span>
             </div>
           )}

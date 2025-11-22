@@ -22,26 +22,25 @@ import { AIModel, AI_MODELS, getModelConfigByModel } from "@/lib/models";
 import { useAtom } from "jotai";
 import { selectedModel, bookmarkedModelsAtom } from "@/stores/ModelStore";
 import { ConditionalTooltip } from "./ui/ConditionalTooltip";
+import { useGetAllModels } from "@/hooks/useGetAllModels";
 
 interface ModelDropdownProps {
-  isImageGenMode?: boolean;
   isPlanMode?: boolean;
 }
 
-export const ModelDropdown = ({
-  isImageGenMode,
-  isPlanMode,
-}: ModelDropdownProps) => {
+export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
   const [selectedCategory, setSelectedCategory] = useState<
     "top" | "all" | "bookmarks" | "filters"
   >("top");
   const [model, setModel] = useAtom(selectedModel);
   const [bookmarkedModels] = useAtom(bookmarkedModelsAtom);
-  const selectedModelConfig = getModelConfigByModel(model);
   const [searchQuery, setSearchQuery] = useState("");
   const [hoveredModel, setHoveredModel] = useState<AIModel | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
+  const { data } = useGetAllModels();
 
+  // Derive isImageGenMode from active filters
+  const isImageGenMode = activeFilters.includes("imageGeneration");
   const toggleFilter = (filter: string) => {
     setActiveFilters((prev) => {
       const newFilters = prev.includes(filter)
@@ -95,7 +94,7 @@ export const ModelDropdown = ({
   const isModelEnabled = useCallback(
     (model: AIModel) => {
       if (isImageGenMode) {
-        const config = getModelConfigByModel(model);
+        const config = getModelConfigByModel(model, data?.allModelsConfigs);
         if (!config.isImageGeneration) return false;
       }
       if (isPlanMode) {
@@ -103,7 +102,7 @@ export const ModelDropdown = ({
       }
       return true;
     },
-    [isImageGenMode, isPlanMode, PLAN_MODE_ALLOWED_MODELS]
+    [isImageGenMode, isPlanMode, PLAN_MODE_ALLOWED_MODELS, data]
   );
 
   const handleModelSelection = useCallback(
@@ -117,10 +116,12 @@ export const ModelDropdown = ({
   );
 
   const groupedModels = useMemo(() => {
-    // STEP 1: FILTER models
-    const filteredModels = AI_MODELS.filter((model) => {
-      const config = getModelConfigByModel(model);
+    const sourceModels =
+      selectedCategory === "top" ? AI_MODELS : data?.allModels || [];
 
+    // STEP 1: FILTER models
+    const filteredModels = sourceModels.filter((model: AIModel) => {
+      const config = getModelConfigByModel(model, data?.allModelsConfigs);
       // Filter 1: Image generation mode
       if (isImageGenMode && !config.isImageGeneration) return false;
       if (!isImageGenMode && config.isImageGeneration) return false;
@@ -171,7 +172,7 @@ export const ModelDropdown = ({
     // STEP 2: GROUP by company using reduce
     const grouped = filteredModels.reduce(
       (acc, model) => {
-        const config = getModelConfigByModel(model);
+        const config = getModelConfigByModel(model, data?.allModelsConfigs);
         const company = config.company; // "Google", "OpenAI", etc.
 
         if (!acc[company]) {
@@ -185,12 +186,12 @@ export const ModelDropdown = ({
 
     // STEP 3: SORT companies alphabetically, then sort models within each company
     const sortedGrouped = Object.keys(grouped)
-      .sort() // Sort company names
+      .sort((a, b) => a.localeCompare(b, undefined, { sensitivity: "base" })) // Case-insensitive sort
       .reduce(
         (acc, company) => {
           acc[company] = grouped[company].sort((a, b) => {
-            const configA = getModelConfigByModel(a);
-            const configB = getModelConfigByModel(b);
+            const configA = getModelConfigByModel(a, data?.allModelsConfigs);
+            const configB = getModelConfigByModel(b, data?.allModelsConfigs);
             return configA.displayName.localeCompare(configB.displayName);
           });
           return acc;
@@ -216,7 +217,7 @@ export const ModelDropdown = ({
     </div>
   );
   return (
-    <div className="flex gap-0.5">
+    <div className="relative flex gap-0.5">
       <div className="z-50 flex max-h-[50vh] w-[424px] flex-col rounded-xl border-2 border-gray-700 bg-black shadow-lg">
         <div className="grid w-full flex-shrink-0 grid-cols-4 divide-x divide-gray-700 border-b-2 border-gray-700">
           <ConditionalTooltip
@@ -364,15 +365,18 @@ export const ModelDropdown = ({
               {Object.entries(groupedModels).map(([company, models]) => (
                 <div key={company}>
                   <ProviderHeader company={company} />
-                  {models.map((modelName) => (
-                    <ModelCard
-                      key={modelName}
-                      model={modelName}
-                      isModelSelected={model === modelName}
-                      onSelect={handleModelSelection}
-                      onHover={setHoveredModel}
-                    />
-                  ))}
+                  {models.map((modelName, index) => {
+                    return (
+                      <ModelCard
+                        key={index}
+                        model={modelName}
+                        isModelSelected={model === modelName}
+                        onSelect={handleModelSelection}
+                        onHover={setHoveredModel}
+                        allModelsConfigs={data?.allModelsConfigs}
+                      />
+                    );
+                  })}
                 </div>
               ))}
             </div>
@@ -391,7 +395,10 @@ export const ModelDropdown = ({
       </div>
       {hoveredModel && (
         <div className="hidden flex-shrink-0 md:block md:w-[280px]">
-          <ModelInfo model={hoveredModel} />
+          <ModelInfo
+            model={hoveredModel}
+            className="absolute top-0 left-[428px] max-h-[120vh]"
+          />
         </div>
       )}
     </div>
