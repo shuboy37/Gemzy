@@ -1,6 +1,3 @@
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
-
 export const AI_MODELS = [
   //Standard Models
   "Claude Sonnet 4",
@@ -27,11 +24,10 @@ export const AI_MODELS = [
   "Kimi K2",
   "Gemini Nano Banana",
   "OpenAI GPT-5 Image Mini",
-
-  //ALL MODELS
 ] as const;
 
-export type AIModel = (typeof AI_MODELS)[number];
+export type AIModel = (typeof AI_MODELS)[number] | string;
+export type ALL_MODEL_CONFIGS = Record<string, ModelConfig>;
 
 export const IMAGE_GEN_MODELS = [
   "Gemini Nano Banana",
@@ -72,10 +68,10 @@ export type ModelConfig = {
 
 export type ModelCategory = "top" | "all";
 
-export const getEffectiveProvider = async (
+export const getEffectiveProvider = (
   modelConfig: ModelConfig,
   isCreditsExhausted: boolean
-): Promise<"openrouter" | "vercel-gateway"> => {
+) => {
   if (modelConfig.category === "all") {
     return "openrouter";
   }
@@ -466,189 +462,39 @@ export const MODEL_CONFIGS = {
   },
 } as const satisfies Record<AIModel, ModelConfig>;
 
-let ALL_MODELS: ModelConfig[] = [];
+export const getModelsByCategory = (
+  category: ModelCategory,
+  models?: ModelConfig[]
+): ModelConfig[] => {
+  if (category === "all") {
+    return models || [];
+  }
+  if (category === "top") {
+    return Object.values(MODEL_CONFIGS);
+  }
+  return [];
+};
 
-export const getAllModels = async (): Promise<ModelConfig[]> => {
-  if (ALL_MODELS.length > 0) {
-    return ALL_MODELS;
+export const getModelConfigByModel = (
+  modelName: AIModel,
+  allModelsConfigs?: ALL_MODEL_CONFIGS
+): ModelConfig => {
+  // First, check top models by display name (for backwards compatibility)
+  const topConfigByName =
+    MODEL_CONFIGS[modelName as keyof typeof MODEL_CONFIGS];
+  if (topConfigByName) return topConfigByName;
+
+  // Finally, check all models by modelId (key) or displayName (search)
+  if (allModelsConfigs) {
+    const foundByDisplayName = Object.values(allModelsConfigs).find(
+      (config) => config.displayName === modelName
+    );
+    if (foundByDisplayName) return foundByDisplayName;
   }
 
-  const allModels = useQuery({
-    queryKey: ["all-models", ALL_MODELS.length],
-    queryFn: async () => {
-      const data = await axios.get("https://openrouter.ai/api/v1/models");
-      return data;
-    },
-    enabled: ALL_MODELS.length === 0,
-    staleTime: 24 * 60 * 60 * 1000,
-    retry: (failureCount) => {
-      return failureCount < 3;
-    },
-  });
-
-  ALL_MODELS = allModels.data?.data.map((model: any) => {
-    const topModelIds = new Set(
-      Object.values(MODEL_CONFIGS).map((v) => v.modelId)
-    );
-    const isTopModel = topModelIds.has(model.id);
-
-    // Define premium and super premium model sets
-    const premiumModelIds = new Set([
-      "google/gemini-2.5-flash-preview-09-2025",
-      "openai/gpt-5-chat",
-      "openai/o4-mini",
-      "anthropic/claude-haiku-4.5",
-      "qwen/qwen3-max",
-      "moonshotai/kimi-k2",
-      "google/gemini-2.5-flash-image", // Gemini Nano Banana
-      "openai/gpt-5-image-mini",
-    ]);
-
-    const superPremiumModelIds = new Set([
-      "anthropic/claude-sonnet-4",
-      "anthropic/claude-sonnet-4.5",
-      "google/gemini-2.5-pro",
-      "x-ai/grok-4",
-    ]);
-
-    const fileUploadModelIds = new Set([
-      "openai/gpt-5-image-mini",
-      "openai/gpt-5-image",
-      "openai/o3-deep-research",
-      "openai/o4-mini-deep-research",
-      "openai/gpt-5-pro",
-      "anthropic/claude-sonnet-4.5",
-      "google/gemini-2.5-flash-preview-09-2025",
-      "google/gemini-2.5-flash-lite-preview-09-2025",
-      "openai/gpt-5-chat",
-      "openai/gpt-5",
-      "openai/gpt-5-mini",
-      "openai/gpt-5-nano",
-      "anthropic/claude-opus-4.1",
-      "google/gemini-2.5-flash-lite",
-      "google/gemini-2.5-flash-lite-preview-06-17",
-      "google/gemini-2.5-flash",
-      "google/gemini-2.5-pro",
-      "openai/o3-pro",
-      "google/gemini-2.5-pro-preview",
-      "anthropic/claude-opus-4",
-      "anthropic/claude-sonnet-4",
-      "google/gemini-2.5-pro-preview-05-06",
-      "openai/o4-mini-high",
-      "openai/o3",
-      "openai/o4-mini",
-      "openai/gpt-4.1",
-      "openai/gpt-4.1-mini",
-      "openai/gpt-4.1-nano",
-      "openai/o1-pro",
-      "google/gemini-2.0-flash-lite-001",
-      "anthropic/claude-3.7-sonnet:thinking",
-      "anthropic/claude-3.7-sonnet",
-      "openai/o3-mini-high",
-      "google/gemini-2.0-flash-001",
-      "openai/o3-mini",
-      "openai/o1",
-      "openai/gpt-4o-2024-11-20",
-      "anthropic/claude-3.5-haiku-20241022",
-      "anthropic/claude-3.5-sonnet",
-      "openai/gpt-4o-2024-08-06",
-      "openai/gpt-4o-mini",
-      "openai/gpt-4o-mini-2024-07-18",
-      "anthropic/claude-3.5-sonnet-20240620",
-      "openai/gpt-4o",
-      "openai/gpt-4o:extended",
-      "openai/gpt-4o-2024-05-13",
-      "google/gemini-2.5-flash-preview-05-20",
-      "google/gemini-2.5-flash-preview",
-      "google/gemini-2.5-pro-exp-03-25",
-    ]);
-
-    const isPremiumModel = premiumModelIds.has(model.id);
-    const isSuperPremiumModel = superPremiumModelIds.has(model.id);
-    const isFileUploadModel = fileUploadModelIds.has(model.id);
-
-    // Extract provider from model ID (e.g., "openai/gpt-4" -> "openai")
-    const provider = model.id.split("/")[0];
-
-    // Dynamic mapping for known providers
-    const providerMappings: Record<
-      string,
-      { iconType: string; company: string }
-    > = {
-      openai: { iconType: "openai", company: "OpenAI" },
-      google: { iconType: "google", company: "Google" },
-      anthropic: { iconType: "anthropic", company: "Anthropic" },
-      deepseek: { iconType: "deepseek", company: "DeepSeek" },
-      qwen: { iconType: "qwen", company: "Alibaba" },
-      "x-ai": { iconType: "x-ai", company: "XAI" },
-      moonshotai: { iconType: "kimi", company: "Moonshot" },
-      meta: { iconType: "meta", company: "Meta" },
-      huggingface: { iconType: "huggingface", company: "Hugging Face" },
-      mistral: { iconType: "mistral", company: "Mistral" },
-      cohere: { iconType: "cohere", company: "Cohere" },
-      ai21: { iconType: "ai21", company: "AI21 Labs" },
-      together: { iconType: "together", company: "Together AI" },
-      perplexity: { iconType: "perplexity", company: "Perplexity" },
-      fireworks: { iconType: "fireworks", company: "Fireworks AI" },
-      replicate: { iconType: "replicate", company: "Replicate" },
-      stability: { iconType: "stability", company: "Stability AI" },
-      runway: { iconType: "runway", company: "Runway ML" },
-
-      // Other major and regional providers
-      minimax: { iconType: "minimax", company: "Minimax AI" },
-      sarvamai: { iconType: "sarvamai", company: "Sarvam AI" },
-      thudm: { iconType: "thudm", company: "THUDM/GLM" },
-      skywork: { iconType: "skywork", company: "Skywork AI" },
-      fuyu: { iconType: "fuyu", company: "Fuyu" },
-      scb10x: { iconType: "scb10x", company: "SCB10X Labs" },
-      liquid: { iconType: "liquid", company: "Liquid Intelligence" },
-      "z-ai": { iconType: "z-ai", company: "Various/China" },
-      "shisa-ai": { iconType: "shisa-ai", company: "Shisa AI" },
-      tngtech: { iconType: "tngtech", company: "TNG Tech" },
-      openrouter: { iconType: "openrouter", company: "OpenRouter" },
-      undi95: { iconType: "undi95", company: "Community" },
-      thedrummer: { iconType: "thedrummer", company: "Community" },
-      zhou: { iconType: "zhou", company: "Chinese models" },
-      nous: { iconType: "nous", company: "Nous Research" },
-    };
-
-    // Get mapping or create dynamic fallback
-    const mapping = providerMappings[provider] || {
-      iconType: "openai" as const, // Default icon
-      company: provider.charAt(0).toUpperCase() + provider.slice(1), // Capitalize provider name
-    };
-
-    const { iconType, company } = mapping;
-
-    // Get model-specific config if it exists in top models, otherwise use defaults for "all" models
-    const topModelConfig = Object.values(MODEL_CONFIGS).find(
-      (config) => config.modelId === model.id
-    );
-    const hasReasoning = topModelConfig?.hasReasoning ?? false;
-    const isFast = topModelConfig?.isFast ?? false;
-    const isImageGeneration =
-      (topModelConfig as any)?.isImageGeneration ?? false;
-    const image2imageGen = (topModelConfig as any)?.image2imageGen ?? false;
-    const imageGenCreditCost = (topModelConfig as any)?.imageGenCreditCost ?? 5;
-
-    return {
-      modelId: model.id,
-      provider: isTopModel ? "vercel-gateway" : "openrouter",
-      fallbackProvider: isTopModel ? "openrouter" : undefined,
-      category: "all",
-      displayName: model.name,
-      iconType,
-      company,
-      isPremium: isPremiumModel,
-      isSuperPremium: isSuperPremiumModel,
-      hasReasoning,
-      isFileUploadModel,
-      isFast,
-      isImageGeneration,
-      image2imageGen,
-      imageGenCreditCost,
-      description: model.description || "",
-    };
-  });
-  return ALL_MODELS;
+  console.warn(
+    `Model config not found for: ${modelName}. Falling back to default.`
+  );
+  // Return a fallback config for the first available model
+  return MODEL_CONFIGS["Gemini 2.5 Flash Lite"];
 };
