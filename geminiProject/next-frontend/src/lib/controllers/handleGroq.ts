@@ -2,7 +2,8 @@ import { getGroqChatCompletion } from "@/lib/services/groqServices";
 
 export const handleGroq = async (
   input: string,
-  effectiveModel: string
+  effectiveModel: string,
+  originalModelName?: string
 ): Promise<ReadableStream> => {
   try {
     const groqStream = await getGroqChatCompletion({ input, effectiveModel });
@@ -22,7 +23,10 @@ export const handleGroq = async (
           }
 
           const metaChunk =
-            JSON.stringify({ type: "meta", model: effectiveModel }) + "\n";
+            JSON.stringify({
+              type: "meta",
+              model: originalModelName || effectiveModel,
+            }) + "\n";
           controller.enqueue(new TextEncoder().encode(metaChunk));
           controller.close();
         } catch (error) {

@@ -9,7 +9,8 @@ import { imageCache } from "@/lib/utils/imageCache";
 export const handleGemini = (
   input: string,
   effectiveModel: string,
-  files: File[]
+  files: File[],
+  originalModelName?: string
 ): ReadableStream => {
   return new ReadableStream({
     async start(controller) {
@@ -54,6 +55,7 @@ export const handleGemini = (
         console.log("[handleGemini] Received response from Gemini service.");
 
         let finalResult;
+        const modelToReturn = originalModelName || effectiveModel;
         if (effectiveModel === "gemini-2.0-flash-exp-image-generation") {
           const { finalResponse, textWithPic, imageDataSrc } =
             await getImageGenService(response);
@@ -62,10 +64,13 @@ export const handleGemini = (
             response: finalResponse,
             textWithPic,
             imgId,
-            effectiveModel,
+            effectiveModel: modelToReturn,
           };
         } else {
-          finalResult = { response: response.text, effectiveModel };
+          finalResult = {
+            response: response.text,
+            effectiveModel: modelToReturn,
+          };
         }
 
         console.log("[handleGemini] Final result:", finalResult);
