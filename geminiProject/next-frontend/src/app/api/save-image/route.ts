@@ -1,4 +1,16 @@
-// // src/app/api/save-image/route.ts
+// This route is currently disabled
+// Uncomment and configure if you need local image saving
+
+import { NextResponse } from "next/server";
+
+export async function POST() {
+  return NextResponse.json(
+    { error: "This endpoint is disabled" },
+    { status: 501 }
+  );
+}
+
+// Original implementation:
 // import { NextRequest, NextResponse } from "next/server";
 // import { writeFile } from "fs/promises";
 // import { join } from "path";
