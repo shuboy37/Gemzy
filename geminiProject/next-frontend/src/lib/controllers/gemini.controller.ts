@@ -56,7 +56,7 @@ export const handleGemini = (
 
         let finalResult;
         const modelToReturn = originalModelName || effectiveModel;
-        if (effectiveModel === "gemini-2.0-flash-exp-image-generation") {
+        if (effectiveModel === "gemini-2.5-flash-exp-image-generation") {
           const { finalResponse, textWithPic, imageDataSrc } =
             await getImageGenService(response);
           const imgId = await getIdAndSaveImage({ imageCache, imageDataSrc });
