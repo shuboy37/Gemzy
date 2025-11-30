@@ -18,6 +18,7 @@ export interface Attachment {
   id: string;
   type: string;
   fileKey: string;
+  attachmentUrl?: string;
   title: string;
   variant: "chat" | "knowledge";
 }
@@ -27,6 +28,7 @@ interface AttachmentManager {
   addChatAttachment: (file: File) => void;
   addVideoAttachment: (s3Key: string, fileName?: string) => void;
   removeAttachment: ({ id }: { id: string }) => void;
+  updateAttachment: (id: string, updates: Partial<Attachment>) => void;
   hasUploading: boolean;
 }
 
@@ -132,7 +134,6 @@ export const AttachmentsProvider = ({ children }: PropsWithChildren) => {
           return attachment;
         })
       );
-
       return {
         fileKey,
         type,
@@ -168,6 +169,16 @@ export const AttachmentsProvider = ({ children }: PropsWithChildren) => {
     setAttachments((prev) => prev.filter((attachment) => attachment.id !== id));
   };
 
+  const updateAttachment = (id: string, updates: Partial<Attachment>) => {
+    setAttachments((prev) =>
+      prev.map((attachment) =>
+        attachment.id === id
+          ? ({ ...attachment, ...updates } as Attachment | LocalAttachment)
+          : attachment
+      )
+    );
+  };
+
   return (
     <AttachmentsContext.Provider
       value={{
@@ -175,6 +186,7 @@ export const AttachmentsProvider = ({ children }: PropsWithChildren) => {
         addChatAttachment,
         addVideoAttachment,
         removeAttachment,
+        updateAttachment,
         hasUploading,
       }}
     >

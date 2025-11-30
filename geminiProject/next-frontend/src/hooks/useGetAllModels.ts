@@ -74,8 +74,6 @@ export const useGetAllModels = () => {
       );
 
       modelsData.data.forEach((model: OpenRouterModel) => {
-        // Skip models with useless suffixes for your business model
-        // :free, :extended, :exacto are provider-specific variants that don't add value
         if (model.id.match(/:(free|extended|exacto)$/)) {
           return; // Skip this model entirely
         }
