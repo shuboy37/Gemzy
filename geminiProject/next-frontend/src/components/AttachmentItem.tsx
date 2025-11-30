@@ -7,10 +7,15 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./ui/dialog";
-import { Attachment, LocalAttachment } from "@/hooks/use-attachments";
+import {
+  Attachment,
+  LocalAttachment,
+  useAttachments,
+} from "@/hooks/use-attachments";
 import { useQuery } from "@tanstack/react-query";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { useGetS3AttachmentUrl } from "@/hooks/useGetS3AttachmentUrl";
 
 interface AttachmentItemProps {
   attachment: Attachment | LocalAttachment;
@@ -77,7 +82,26 @@ function ImageAttachment({
   attachment: Attachment | LocalAttachment;
   onRemove?: () => void;
 }) {
+  const { updateAttachment } = useAttachments();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const {
+    data: getAttachmentS3Url,
+    error,
+    isLoading,
+  } = useGetS3AttachmentUrl({
+    fileKey: "fileKey" in attachment ? attachment.fileKey : "",
+    attachmentId: attachment.id,
+  });
+
+  useEffect(() => {
+    if (
+      getAttachmentS3Url &&
+      "fileKey" in attachment &&
+      !("attachmentUrl" in attachment && attachment.attachmentUrl)
+    ) {
+      updateAttachment(attachment.id, { attachmentUrl: getAttachmentS3Url });
+    }
+  }, [getAttachmentS3Url, attachment.id, updateAttachment]);
 
   const isUploading =
     "uploadProgress" in attachment &&
@@ -86,50 +110,25 @@ function ImageAttachment({
   const uploadProgress =
     "uploadProgress" in attachment ? attachment.uploadProgress : 0;
 
-  // Fetch presigned URL when fileKey is available
+  const getAttachmentUrl = () => {
+    if (isLoading) {
+      return "/placeholder-image.png"; // Fallback
+    }
 
-  const getImageURL = useQuery({
-    queryKey: ["presigned-img-url", attachment.id],
-    queryFn: async () => {
-      if ("fileKey" in attachment && attachment.fileKey) {
-        const data = await axios.post(
-          "/api/get-image-url",
-          { fileKey: attachment.fileKey },
-          {
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        return data.data.url;
-      }
-      return;
-    },
-
-    enabled: "fileKey" in attachment && !!attachment.fileKey,
-    staleTime: 30 * 60 * 1000,
-    retry: (failureCount) => {
-      return failureCount < 3;
-    },
-  });
-
-  const getImageUrl = () => {
-    if (getImageURL.error) {
+    if (error) {
       console.error("Failed to fetch presigned URL");
       toast.error("Failed to load image, please try again later.");
     }
 
     // 1. If we have presigned S3 URL (most secure)
-    if (getImageURL.data) {
-      return getImageURL.data;
+    if (getAttachmentS3Url) {
+      return getAttachmentS3Url;
     }
 
     // 2. If it's a LocalAttachment with localUrl (during upload)
     if ("localUrl" in attachment && attachment.localUrl) {
       return attachment.localUrl;
     }
-
-    return "/placeholder-image.png"; // Fallback
   }; // Progress circle calculation
   const circumference = 2 * Math.PI * 12;
   const strokeDashoffset =
@@ -149,7 +148,7 @@ function ImageAttachment({
               }}
             >
               <img
-                src={getImageUrl()}
+                src={getAttachmentUrl()}
                 alt={attachment.title}
                 draggable={false}
                 className="size-32 rounded-md object-cover object-center transition-transform duration-300 ease-out group-hover:scale-110"
@@ -166,7 +165,7 @@ function ImageAttachment({
             <div className="relative flex h-full w-full items-center justify-center">
               <div className="relative">
                 <img
-                  src={getImageUrl()}
+                  src={getAttachmentUrl()}
                   alt={attachment.title}
                   className="max-h-[80vh] max-w-full rounded-lg object-contain"
                 />

@@ -206,7 +206,7 @@ export const Chatbox = ({
                         variant="secondary"
                         size="icon"
                         className="bg-stone-800"
-                        disabled={!model.startsWith("Gemini")}
+                        disabled={!selectedModelConfig?.isFileSupported}
                       >
                         <Paperclip className="size-5 text-stone-50" />
                       </DuolingoButton>
