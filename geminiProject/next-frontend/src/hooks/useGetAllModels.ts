@@ -75,7 +75,7 @@ export const useGetAllModels = () => {
 
       modelsData.data.forEach((model: OpenRouterModel) => {
         if (model.id.match(/:(free|extended|exacto)$/)) {
-          return; // Skip this model entirely
+          return;
         }
 
         const trueModelName = formatModelName(model.name);
@@ -320,8 +320,6 @@ export const useGetAllModels = () => {
           description: model.description || "",
         };
 
-        // Use model.id as the unique key (includes :thinking, etc. suffixes)
-        // This avoids collisions from duplicate canonical_slug values
         allModels.push(trueModelName);
         allModelsConfigs[model.id] = modelConfig;
       });

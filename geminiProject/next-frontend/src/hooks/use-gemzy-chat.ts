@@ -11,8 +11,6 @@ import {
   useAttachments,
 } from "@/hooks/use-attachments";
 import { ChatAttachment } from "@/lib/api-types";
-import { useGetAllModels } from "@/hooks/useGetAllModels";
-import { getModelConfigByModel } from "@/lib/models";
 import toast from "react-hot-toast";
 
 // =============================================================================
@@ -125,35 +123,20 @@ function prepareAttachmentsForAPI(
  * ```
  */
 export function useGemzyChat() {
-  // Get the selected model display name from jotai
-  const modelName = useAtomValue(selectedModel);
-
-  // Get ALL models configs from OpenRouter (includes dynamically created configs)
-  const { data: allModelsData } = useGetAllModels();
+  const modelId = useAtomValue(selectedModel).modelId;
 
   const { attachments, hasUploading, removeAttachment } = useAttachments();
 
-  // Get the model config - this now properly looks up in allModelsConfigs too!
-  const modelConfig = useMemo(() => {
-    return getModelConfigByModel(modelName, allModelsData?.allModelsConfigs);
-  }, [modelName, allModelsData?.allModelsConfigs]);
-
-  // Get the model ID for OpenRouter
-  const modelId = modelConfig?.modelId ?? "google/gemini-2.5-flash";
-
-  // Use refs to always get the latest values in the body function
-  // This is necessary because the body function is a closure that captures
-  // values at the time useChat is initialized
-  const modelIdRef = useRef(modelId);
   const attachmentsRef = useRef<ChatAttachment[]>([]);
+  const modelIdRef = useRef(modelId);
 
-  // Keep refs in sync with current values
+  // Keep modelId ref in sync with current value
   useEffect(() => {
     modelIdRef.current = modelId;
     console.log("[useGemzyChat] Model changed to:", modelId);
   }, [modelId]);
 
-  // Prepare attachments for API
+  // Keep refs in sync with current values
   const preparedAttachments = useMemo(
     () => prepareAttachmentsForAPI(attachments),
     [attachments]
@@ -172,7 +155,7 @@ export function useGemzyChat() {
       api: "/api/chat",
       // Dynamic body - uses refs to always get latest values
       body: () => ({
-        model: modelIdRef.current,
+        model: modelIdRef.current, // ← Use ref to get CURRENT value!
         attachments:
           attachmentsRef.current.length > 0
             ? attachmentsRef.current
