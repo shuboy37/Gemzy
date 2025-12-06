@@ -38,7 +38,7 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
   const [hoveredModel, setHoveredModel] = useState<AIModel | null>(null);
   const [activeFilters, setActiveFilters] = useState<string[]>([]);
   const { data } = useGetAllModels();
-
+  console.log(model.model, model.modelId);
   // Derive isImageGenMode from active filters
   const isImageGenMode = activeFilters.includes("imageGeneration");
   const toggleFilter = (filter: string) => {
@@ -108,11 +108,15 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
   const handleModelSelection = useCallback(
     (newModel: AIModel) => {
       if (isModelEnabled(newModel)) {
-        setModel(newModel);
+        setModel({
+          model: newModel,
+          modelId: getModelConfigByModel(newModel, data?.allModelsConfigs)
+            .modelId,
+        });
         setSearchQuery("");
       }
     },
-    [isModelEnabled, setModel]
+    [isModelEnabled, setModel, data?.allModelsConfigs]
   );
 
   const groupedModels = useMemo(() => {
@@ -370,7 +374,7 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
                       <ModelCard
                         key={index}
                         model={modelName}
-                        isModelSelected={model === modelName}
+                        isModelSelected={model.model === modelName}
                         onSelect={handleModelSelection}
                         onHover={setHoveredModel}
                         allModelsConfigs={data?.allModelsConfigs}
