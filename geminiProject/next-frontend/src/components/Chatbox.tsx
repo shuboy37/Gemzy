@@ -1,7 +1,7 @@
 "use client";
 import { useState, useContext, useCallback, useEffect } from "react";
 import { Paperclip, Square, ArrowUp, Check, ChevronDown } from "lucide-react";
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { selectedModel } from "@/stores/ModelStore";
 // import { ModelDropdown } from "@/components/ui/DropdownContent";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
@@ -59,7 +59,7 @@ export const Chatbox = ({
   setFiles,
 }: ChatboxProps) => {
   const [editor] = useLexicalComposerContext();
-  const [model] = useAtom(selectedModel);
+  const model = useAtomValue(selectedModel).model;
   const [isFocused, setIsFocused] = useState(false);
   const [hasContent, setHasContent] = useState(false);
   const { attachments, hasUploading, removeAttachment } = useAttachments();

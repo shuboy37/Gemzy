@@ -12,8 +12,6 @@ import {
   LocalAttachment,
   useAttachments,
 } from "@/hooks/use-attachments";
-import { useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { useGetS3AttachmentUrl } from "@/hooks/useGetS3AttachmentUrl";
 
@@ -53,6 +51,26 @@ function DocumentAttachment({
         return "📎";
     }
   };
+  const { updateAttachment, attachments } = useAttachments();
+
+  const {
+    data: getAttachmentS3Url,
+    error,
+    isLoading,
+  } = useGetS3AttachmentUrl({
+    fileKey: "fileKey" in attachment ? attachment.fileKey : "",
+    attachmentId: attachment.id,
+  });
+
+  useEffect(() => {
+    if (
+      getAttachmentS3Url &&
+      "fileKey" in attachment &&
+      !("attachmentUrl" in attachment && attachment.attachmentUrl)
+    ) {
+      updateAttachment(attachment.id, { attachmentUrl: getAttachmentS3Url });
+    }
+  }, [getAttachmentS3Url, attachment.id, updateAttachment]);
 
   return (
     <div className="flex w-fit items-center gap-2 rounded-lg bg-pink-100 px-3 py-2">
@@ -82,7 +100,7 @@ function ImageAttachment({
   attachment: Attachment | LocalAttachment;
   onRemove?: () => void;
 }) {
-  const { updateAttachment } = useAttachments();
+  const { updateAttachment, attachments } = useAttachments();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const {
     data: getAttachmentS3Url,
@@ -122,6 +140,7 @@ function ImageAttachment({
 
     // 1. If we have presigned S3 URL (most secure)
     if (getAttachmentS3Url) {
+      console.log(getAttachmentS3Url);
       return getAttachmentS3Url;
     }
 

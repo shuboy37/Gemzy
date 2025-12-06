@@ -134,10 +134,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     };
   }, [editor, onSubmit, attachments.length]);
 
-  // ==========================================================================
-  // RENDER HELPERS
-  // ==========================================================================
-
   const hasMessages = messages.length > 0;
 
   // Extract text from message parts
@@ -145,7 +141,9 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     parts: Array<{ type: string; text?: string }>
   ): string => {
     return parts
-      .filter((part): part is { type: "text"; text: string } => part.type === "text")
+      .filter(
+        (part): part is { type: "text"; text: string } => part.type === "text"
+      )
       .map((part) => part.text)
       .join("");
   };
