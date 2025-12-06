@@ -1,17 +1,15 @@
-import { AIModel, getModelConfigByModel } from "@/lib/models";
-import { atom } from "jotai";
+import { AIModel } from "@/lib/models";
 import { atomWithStorage } from "jotai/utils";
 
-export const selectedModel = atomWithStorage<AIModel>(
-  "selected-model",
-  "Gemini 2.5 Flash"
-);
+type SelectedModelProps = {
+  model: AIModel;
+  modelId: string;
+};
 
-export const modelConfigAtom = atom((get) => {
-  const ourModel = get(selectedModel);
-  const modelConfig = getModelConfigByModel(ourModel);
-  return modelConfig;
-});
+export const selectedModel = atomWithStorage<SelectedModelProps>(
+  "selected-model",
+  { model: "Gemini 2.5 Flash", modelId: "google/gemini-2.5-flash" }
+);
 
 export const bookmarkedModelsAtom = atomWithStorage<AIModel[]>(
   "bookmarked-models",
