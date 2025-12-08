@@ -26,7 +26,6 @@ export const ModelCard = ({
 }: ModelCardProps) => {
   const modelConfig = getModelConfigByModel(model, allModelsConfigs);
   const [bookmarkedModels, setBookmarkedModels] = useAtom(bookmarkedModelsAtom);
-  const isBookmarked = bookmarkedModels.includes(model);
 
   const toggleBookmark = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -36,6 +35,7 @@ export const ModelCard = ({
       setBookmarkedModels([...bookmarkedModels, model]);
     }
   };
+  const isBookmarked = bookmarkedModels.includes(model);
 
   return (
     <div
@@ -72,10 +72,10 @@ export const ModelCard = ({
           {/* Bookmark Icon */}
           <div
             onClick={toggleBookmark}
-            className="group/bookmark flex h-6 w-6 cursor-pointer items-center justify-center transition-colors hover:bg-gray-700/50"
+            className="group/bookmark flex size-6 cursor-pointer items-center justify-center transition-colors hover:bg-gray-700/50"
           >
             <Bookmark
-              className={`h-3.5 w-3.5 transition-colors ${
+              className={`size-3.5 transition-colors ${
                 isBookmarked
                   ? "fill-amber-500 text-amber-500"
                   : "text-gray-400 group-hover/bookmark:text-amber-500"
