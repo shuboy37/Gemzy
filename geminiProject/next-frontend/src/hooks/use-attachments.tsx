@@ -8,7 +8,7 @@ export interface LocalAttachment {
   variant: "chat";
   id: string;
   title: string;
-  type: "image" | "docx";
+  type: "image" | "docx" | "pdf" | "txt" | "video";
   localUrl?: string;
   uploadProgress: number;
   isUploadDone: boolean;

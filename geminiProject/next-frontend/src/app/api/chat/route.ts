@@ -1,20 +1,17 @@
-import { streamText, UIMessage, convertToModelMessages } from "ai";
+import {
+  streamText,
+  UIMessage,
+  convertToModelMessages,
+  systemModelMessageSchema,
+} from "ai";
 import { openrouter } from "@/lib/utils/openrouter";
 import { chatRequestSchema, ChatAttachment } from "@/lib/api-types";
 import { s3Client, BUCKET_NAME } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
-// Allow streaming responses up to 60 seconds
 export const maxDuration = 60;
 
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
-/**
- * Fetch presigned URL for an S3 file (fallback if frontend didn't provide one)
- */
 async function getPresignedUrl(fileKey: string): Promise<string> {
   const command = new GetObjectCommand({
     Bucket: BUCKET_NAME as string,
@@ -23,13 +20,6 @@ async function getPresignedUrl(fileKey: string): Promise<string> {
   return getSignedUrl(s3Client, command, { expiresIn: 3600 });
 }
 
-/**
- * Fetch document content from S3 and extract text
- * For PDFs and DOCX, we need to process them differently
- * @param fileKey - S3 file key
- * @param type - Document type (pdf, docx, txt)
- * @param documentUrl - Optional presigned URL from frontend (avoids regenerating)
- */
 async function fetchDocumentContent(
   fileKey: string,
   type: string,
@@ -37,7 +27,8 @@ async function fetchDocumentContent(
 ): Promise<string> {
   try {
     // Use the URL from frontend if available, otherwise generate a new one
-    const url = documentUrl || (await getPresignedUrl(fileKey));
+    const url = documentUrl ?? (await getPresignedUrl(fileKey));
+
     const response = await fetch(url);
 
     if (!response.ok) {
@@ -46,12 +37,10 @@ async function fetchDocumentContent(
 
     // For text files, just read as text
     if (type === "txt") {
-      return await response.text();
+      const docMasala = await response.text();
+      console.log(docMasala);
+      return docMasala;
     }
-
-    // For PDF and DOCX, we'll include them as file references
-    // The AI model will receive the URL and can process it
-    // Note: Some models support PDF natively (Gemini, Claude)
     return `[Document: ${fileKey}]`;
   } catch (error) {
     console.error(`Error fetching document ${fileKey}:`, error);
@@ -59,9 +48,6 @@ async function fetchDocumentContent(
   }
 }
 
-/**
- * Build system prompt with document context
- */
 function buildSystemPromptWithDocuments(
   documentContents: Array<{ title: string; content: string }>
 ): string | undefined {
@@ -73,10 +59,6 @@ function buildSystemPromptWithDocuments(
 
   return `You have access to the following documents that the user has uploaded:\n\n${docContext}\n\nUse this information to help answer the user's questions.`;
 }
-
-// =============================================================================
-// MAIN HANDLER
-// =============================================================================
 
 export async function POST(req: Request) {
   try {

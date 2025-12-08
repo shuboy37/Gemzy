@@ -45,7 +45,7 @@ function areAttachmentsReady(
  */
 function prepareAttachmentsForAPI(
   attachments: (Attachment | LocalAttachment)[]
-): ChatAttachment[] {
+) {
   return attachments
     .filter((att): att is Attachment => "fileKey" in att && !!att.fileKey)
     .map((att): ChatAttachment => {
@@ -56,7 +56,7 @@ function prepareAttachmentsForAPI(
           fileKey: att.fileKey,
           imageUrl: att.attachmentUrl || "",
           title: att.title,
-        };
+        } satisfies ChatAttachment;
       }
 
       if (att.type === "pdf") {
@@ -66,7 +66,7 @@ function prepareAttachmentsForAPI(
           fileKey: att.fileKey,
           documentUrl: att.attachmentUrl, // Pass presigned URL from frontend
           title: att.title,
-        };
+        } satisfies ChatAttachment;
       }
 
       if (att.type === "docx") {
@@ -76,7 +76,7 @@ function prepareAttachmentsForAPI(
           fileKey: att.fileKey,
           documentUrl: att.attachmentUrl, // Pass presigned URL from frontend
           title: att.title,
-        };
+        } satisfies ChatAttachment;
       }
 
       if (att.type === "txt") {
@@ -86,7 +86,7 @@ function prepareAttachmentsForAPI(
           fileKey: att.fileKey,
           documentUrl: att.attachmentUrl, // Pass presigned URL from frontend
           title: att.title,
-        };
+        } satisfies ChatAttachment;
       }
 
       // video or unknown
@@ -95,7 +95,7 @@ function prepareAttachmentsForAPI(
         type: "video" as const,
         fileKey: att.fileKey,
         title: att.title,
-      };
+      } satisfies ChatAttachment;
     });
 }
 
@@ -153,9 +153,8 @@ export function useGemzyChat() {
   const chat = useChat({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      // Dynamic body - uses refs to always get latest values
       body: () => ({
-        model: modelIdRef.current, // ← Use ref to get CURRENT value!
+        model: modelIdRef.current,
         attachments:
           attachmentsRef.current.length > 0
             ? attachmentsRef.current
