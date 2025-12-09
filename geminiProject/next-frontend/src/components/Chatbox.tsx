@@ -146,7 +146,7 @@ export const Chatbox = ({
                 "border-indigo-200 shadow-[0_4px_12px_rgba(99,102,241,0.15)]"
               } ${
                 hasContent && "shimmer-active border-transparent bg-black"
-              } ${isFocused && "ring-1 ring-indigo-600 ring-offset-2"}`}
+              } ${isFocused && "ring-1 ring-indigo-600 ring-offset-1"}`}
             >
               <div
                 className={`flex items-center gap-2 ${attachments.length > 0 && "p-2"}`}

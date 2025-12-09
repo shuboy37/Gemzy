@@ -13,13 +13,6 @@ import {
 import { ChatAttachment } from "@/lib/api-types";
 import toast from "react-hot-toast";
 
-// =============================================================================
-// HELPER FUNCTIONS
-// =============================================================================
-
-/**
- * Check if all attachments have their URLs ready
- */
 function areAttachmentsReady(
   attachments: (Attachment | LocalAttachment)[]
 ): boolean {
@@ -40,9 +33,6 @@ function areAttachmentsReady(
   });
 }
 
-/**
- * Convert attachments to API format
- */
 function prepareAttachmentsForAPI(
   attachments: (Attachment | LocalAttachment)[]
 ) {
@@ -99,29 +89,6 @@ function prepareAttachmentsForAPI(
     });
 }
 
-// =============================================================================
-// HOOK
-// =============================================================================
-
-/**
- * Custom hook that wraps AI SDK's useChat with Gemzy-specific configuration.
- *
- * Features:
- * - Automatically includes the selected model in every request
- * - Handles S3 attachments (images and documents)
- * - Provides type-safe message handling
- * - Waits for uploads to complete before sending
- *
- * @example
- * ```tsx
- * const { messages, sendWithAttachments, status, isReady } = useGemzyChat();
- *
- * // Send text only
- * sendWithAttachments("Hello!");
- *
- * // Attachments are automatically included from useAttachments context
- * ```
- */
 export function useGemzyChat() {
   const modelId = useAtomValue(selectedModel).modelId;
 

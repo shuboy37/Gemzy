@@ -36,10 +36,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     error,
   } = useGemzyChat();
 
-  // ==========================================================================
-  // HANDLERS
-  // ==========================================================================
-
   const onSubmit = useCallback(
     (text: string) => {
       if (!text.trim() && attachments.length === 0) return;
@@ -72,10 +68,6 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     },
     [addChatAttachment]
   );
-
-  // ==========================================================================
-  // EDITOR COMMANDS
-  // ==========================================================================
 
   useEffect(() => {
     // Handle Enter key to submit

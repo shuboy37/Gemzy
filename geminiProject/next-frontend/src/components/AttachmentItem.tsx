@@ -62,6 +62,17 @@ function DocumentAttachment({
     attachmentId: attachment.id,
   });
 
+  const isUploading =
+    "uploadProgress" in attachment &&
+    !attachment.isUploadDone &&
+    attachment.uploadProgress < 100;
+  const uploadProgress =
+    "uploadProgress" in attachment ? attachment.uploadProgress : 0;
+
+  const circumference = 2 * Math.PI * 12;
+  const strokeDashoffset =
+    circumference - (uploadProgress / 100) * circumference;
+
   useEffect(() => {
     if (
       getAttachmentS3Url &&
@@ -73,14 +84,52 @@ function DocumentAttachment({
   }, [getAttachmentS3Url, attachment.id, updateAttachment]);
 
   return (
-    <div className="flex w-fit items-center gap-2 rounded-lg bg-pink-100 px-3 py-2">
-      <span className="text-base">{getIcon(attachment.type)}</span>
+    <div className="relative flex w-fit items-center gap-2 overflow-hidden rounded-lg bg-pink-100 px-3 py-2">
+      {/* Blur overlay when uploading */}
+      {isUploading && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/30 backdrop-opacity-50">
+          <div className="relative flex items-center justify-center">
+            <div className="size-8">
+              <svg className="h-full w-full -rotate-90">
+                <circle
+                  className="text-white/30"
+                  strokeWidth="2"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="12"
+                  cx="16"
+                  cy="16"
+                />
+                <circle
+                  className="text-white transition-all duration-200"
+                  strokeWidth="2"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="12"
+                  cx="16"
+                  cy="16"
+                />
+              </svg>
+            </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-[10px] font-medium text-white">
+                {Math.round(uploadProgress)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
+      {/* Content */}
+      <span className="text-base">{getIcon(attachment.type)}</span>
       <span className="max-w-[120px] truncate text-sm font-medium text-stone-700">
         {attachment.title}
       </span>
 
-      {onRemove && (
+      {onRemove && !isUploading && (
         <button
           onClick={onRemove}
           className="ml-1 rounded-full p-1 hover:bg-red-300"
@@ -148,7 +197,8 @@ function ImageAttachment({
     if ("localUrl" in attachment && attachment.localUrl) {
       return attachment.localUrl;
     }
-  }; // Progress circle calculation
+  };
+
   const circumference = 2 * Math.PI * 12;
   const strokeDashoffset =
     circumference - (uploadProgress / 100) * circumference;
