@@ -5,7 +5,7 @@ import {
   systemModelMessageSchema,
 } from "ai";
 import { openrouter } from "@/lib/utils/openrouter";
-import { chatRequestSchema, ChatAttachment } from "@/lib/api-types";
+import { chatRequestSchema } from "@/lib/api-types";
 import { s3Client, BUCKET_NAME } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -20,13 +20,13 @@ async function getPresignedUrl(fileKey: string): Promise<string> {
   return getSignedUrl(s3Client, command, { expiresIn: 3600 });
 }
 
-async function fetchDocumentContent(
+async function fetchDocxContent(
   fileKey: string,
-  type: string,
   documentUrl?: string
 ): Promise<string> {
   try {
     // Use the URL from frontend if available, otherwise generate a new one
+    const mammoth = await import("mammoth");
     const url = documentUrl ?? (await getPresignedUrl(fileKey));
 
     const response = await fetch(url);
@@ -34,14 +34,10 @@ async function fetchDocumentContent(
     if (!response.ok) {
       throw new Error(`Failed to fetch document: ${response.statusText}`);
     }
-
-    // For text files, just read as text
-    if (type === "txt") {
-      const docMasala = await response.text();
-      console.log(docMasala);
-      return docMasala;
-    }
-    return `[Document: ${fileKey}]`;
+    const buffer = await response.arrayBuffer(); // ← Need to await!
+    const nodeBuffer = Buffer.from(buffer);
+    const rawText = await mammoth.extractRawText({ buffer: nodeBuffer });
+    return rawText.value;
   } catch (error) {
     console.error(`Error fetching document ${fileKey}:`, error);
     return `[Error loading document: ${fileKey}]`;
@@ -91,32 +87,30 @@ export async function POST(req: Request) {
       // Separate images from documents
       const imageAttachments = attachments.filter((a) => a.type === "image");
       const documentAttachments = attachments.filter((a) =>
-        ["pdf", "docx", "txt"].includes(a.type)
+        ["pdf", "txt"].includes(a.type)
       );
+      const docxAttachments = attachments.filter((a) => a.type === "docx");
 
-      // Process documents - extract text content
-      if (documentAttachments.length > 0) {
+      if (docxAttachments.length > 0) {
         const documentContents = await Promise.all(
-          documentAttachments.map(async (doc) => ({
-            title: doc.title,
+          docxAttachments.map(async (docx) => ({
+            title: docx.title,
             // Use documentUrl from frontend if available (from useGetS3AttachmentUrl)
-            content: await fetchDocumentContent(
-              doc.fileKey,
-              doc.type,
-              "documentUrl" in doc ? doc.documentUrl : undefined
+            content: await fetchDocxContent(
+              docx.fileKey,
+
+              "documentUrl" in docx ? docx.documentUrl : undefined
             ),
           }))
         );
         systemPrompt = buildSystemPromptWithDocuments(documentContents);
       }
 
-      // Process images - add to the last user message
-      if (imageAttachments.length > 0) {
-        const lastMessageIndex = processedMessages.length - 1;
-        const lastMessage = processedMessages[lastMessageIndex];
+      const lastMessageIndex = processedMessages.length - 1;
+      const lastMessage = processedMessages[lastMessageIndex];
 
-        if (lastMessage.role === "user") {
-          // Get presigned URLs for images
+      if (lastMessage.role === "user") {
+        if (imageAttachments.length > 0) {
           const imageUrls = await Promise.all(
             imageAttachments.map(async (img) => {
               // Use the imageUrl if available, otherwise generate presigned URL
@@ -130,8 +124,6 @@ export async function POST(req: Request) {
               };
             })
           );
-
-          // Add images to the last user message parts
           const existingParts = lastMessage.parts || [];
           processedMessages[lastMessageIndex] = {
             ...lastMessage,
@@ -141,6 +133,33 @@ export async function POST(req: Request) {
                 type: "file" as const,
                 mediaType: "image/png",
                 url: img.image,
+              })),
+            ],
+          };
+        }
+
+        if (documentAttachments.length > 0) {
+          const documentUrls = await Promise.all(
+            documentAttachments.map(async (doc) => {
+              const docUrl =
+                "documentUrl" in doc && doc.documentUrl
+                  ? doc.documentUrl
+                  : await getPresignedUrl(doc.fileKey);
+              return {
+                type: "document" as const,
+                document: docUrl,
+              };
+            })
+          );
+          const existingParts = lastMessage.parts || [];
+          processedMessages[lastMessageIndex] = {
+            ...lastMessage,
+            parts: [
+              ...existingParts,
+              ...documentUrls.map((doc) => ({
+                type: "file" as const,
+                mediaType: "application/pdf",
+                url: doc.document,
               })),
             ],
           };
