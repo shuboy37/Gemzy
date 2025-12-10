@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { Textarea } from "@/components/ui/TextArea";
 import { Orb } from "@/components/ui/Orb";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
+import { motion } from "motion/react";
 import {
   $createParagraphNode,
   $getRoot,
@@ -141,35 +142,30 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   };
 
   return (
-    <div className="flex h-full w-full flex-col items-center space-y-20 pb-16">
+    <div
+      className={`flex h-full w-full flex-col items-center px-12 pb-10 transition-all duration-500 ${
+        hasMessages ? "justify-end" : "justify-center space-y-20"
+      }`}
+    >
       {/* Hero Section - Show when no messages */}
       {!hasMessages && (
-        <div className="relative flex items-center justify-center space-x-5">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          className="relative flex items-center justify-center space-x-5"
+        >
           <Orb className="absolute -z-10 translate-y-1" />
           <h1 className="text-center text-2xl leading-tight font-semibold text-pretty whitespace-pre-wrap text-white select-none sm:text-3xl md:text-4xl lg:text-5xl">
             Say it. I'll make it real.
           </h1>
-        </div>
+        </motion.div>
       )}
 
-      {/* Input Area */}
-      <FileUpload onFilesAdded={handleAddedFiles}>
-        <div className="flex w-full items-center justify-center">
-          <div className="w-full max-w-2xl">
-            <Chatbox
-              onSubmitHandler={onSubmitHandler}
-              handleAddedFiles={handleAddedFiles}
-              disabled={isStreaming || !isReady}
-              files={files}
-              setFiles={setFiles}
-            />
-          </div>
-        </div>
-      </FileUpload>
-
-      {/* Messages Area */}
-      <div className="mt-10 flex w-full max-w-3xl flex-col items-center space-y-6 bg-black">
-        {hasMessages ? (
+      {/* Messages Area - Moved ABOVE input for correct flow */}
+      {hasMessages && (
+        <div className="flex w-full max-w-3xl flex-1 flex-col items-center space-y-6 overflow-y-auto pb-10">
           <div className="flex w-full flex-col space-y-4 px-4">
             {messages.map((message) => {
               const textContent = getMessageText(message.parts);
@@ -207,25 +203,36 @@ export default function ChatInterface({}: ChatInterfaceProps) {
               </div>
             )}
           </div>
-        ) : (
-          // Show latest response as fallback (for backwards compatibility)
-          latestResponse && (
-            <Textarea
-              value={latestResponse}
-              readOnly
-              placeholder="Your response...."
-              className="w-full border border-gray-100 bg-neutral-950 px-6 py-3 font-semibold text-white"
-            />
-          )
-        )}
 
-        {/* Error display */}
-        {error && (
-          <div className="w-full rounded-lg bg-red-900/50 px-4 py-2 text-red-200">
-            Error: {error.message}
+          {/* Error display */}
+          {error && (
+            <div className="w-full rounded-lg bg-red-900/50 px-4 py-2 text-red-200">
+              Error: {error.message}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Input Area */}
+      <FileUpload onFilesAdded={handleAddedFiles}>
+        <motion.div
+          layout // <--- This magic prop handles the smooth position change
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 10 }}
+          transition={{ duration: 0.5, ease: "easeInOut" }}
+          className="flex w-full items-center justify-center"
+        >
+          <div className="w-full max-w-2xl">
+            <Chatbox
+              onSubmitHandler={onSubmitHandler}
+              handleAddedFiles={handleAddedFiles}
+              disabled={isStreaming || !isReady}
+              files={files}
+              setFiles={setFiles}
+            />
           </div>
-        )}
-      </div>
+        </motion.div>
+      </FileUpload>
     </div>
   );
 }

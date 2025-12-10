@@ -37,7 +37,7 @@ export default function Home() {
       <div>
         <Sidebar />
       </div>
-      <div className="flex h-full w-full flex-1 flex-col items-center justify-between space-y-36 overflow-y-auto">
+      <div className="flex h-full w-full flex-1 flex-col items-center justify-between space-y-8 overflow-y-auto pb-12">
         <div className="w-full">
           <NavBar />
         </div>
