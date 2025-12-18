@@ -37,13 +37,13 @@ button:disabled {
 /* Custom scrollbar for chat list */
 .custom-scrollbar {
   /* Firefox - only supports auto/thin/none */
-  scrollbar-width: auto;
+  scrollbar-width: thin;
   scrollbar-color: #525252 transparent;
 }
 
 /* Webkit browsers (Chrome, Safari, Edge) */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 20px !important;
+  width: 6px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-track {
