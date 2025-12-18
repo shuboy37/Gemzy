@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Sidebar } from "@/components/ui/Sidebar";
 import { NavBar } from "@/components/ui/NavBar";
 import dynamic from "next/dynamic";
@@ -32,20 +33,30 @@ const initialConfig = {
 };
 
 export default function Home() {
+  const [isCollapsible, setIsCollapsible] = useState(false);
+
   return (
     <div className="flex h-screen items-center">
       <div>
-        <Sidebar />
+        <Sidebar
+          isCollapsible={isCollapsible}
+          setIsCollapsible={setIsCollapsible}
+        />
       </div>
-      <div className="flex h-full w-full flex-1 flex-col items-center justify-between space-y-8 overflow-y-auto pb-12">
-        <div className="w-full">
-          <NavBar />
+      <div className="flex h-full w-full flex-1 flex-col items-center overflow-hidden">
+        <div className="h-20 w-full">
+          <NavBar
+            isCollapsible={isCollapsible}
+            setIsCollapsible={setIsCollapsible}
+          />
         </div>
-        <AttachmentsProvider>
-          <LexicalComposer initialConfig={lexicalConfig}>
-            <ChatInterface />
-          </LexicalComposer>
-        </AttachmentsProvider>
+        <div className="min-h-0 w-full flex-1 overflow-y-auto">
+          <AttachmentsProvider>
+            <LexicalComposer initialConfig={lexicalConfig}>
+              <ChatInterface />
+            </LexicalComposer>
+          </AttachmentsProvider>
+        </div>
       </div>
     </div>
   );
