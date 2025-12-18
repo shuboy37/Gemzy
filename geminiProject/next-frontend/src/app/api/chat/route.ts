@@ -2,13 +2,22 @@ import {
   streamText,
   UIMessage,
   convertToModelMessages,
-  systemModelMessageSchema,
+  createUIMessageStream,
+  createIdGenerator,
+  createUIMessageStreamResponse,
 } from "ai";
 import { openrouter } from "@/lib/utils/openrouter";
-import { chatRequestSchema } from "@/lib/api-types";
+import { ChatAttachment, chatRequestSchema } from "@/lib/api-types";
 import { s3Client, BUCKET_NAME } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+type MetaData = {
+  attachments?: ChatAttachment[];
+  userMessage?: string;
+};
+
+type MyUIMessage = UIMessage<MetaData>;
 
 export const maxDuration = 60;
 
@@ -25,7 +34,6 @@ async function fetchDocxContent(
   documentUrl?: string
 ): Promise<string> {
   try {
-    // Use the URL from frontend if available, otherwise generate a new one
     const mammoth = await import("mammoth");
     const url = documentUrl ?? (await getPresignedUrl(fileKey));
 
@@ -34,7 +42,7 @@ async function fetchDocxContent(
     if (!response.ok) {
       throw new Error(`Failed to fetch document: ${response.statusText}`);
     }
-    const buffer = await response.arrayBuffer(); // ← Need to await!
+    const buffer = await response.arrayBuffer();
     const nodeBuffer = Buffer.from(buffer);
     const rawText = await mammoth.extractRawText({ buffer: nodeBuffer });
     return rawText.value;
@@ -63,6 +71,8 @@ export async function POST(req: Request) {
 
     // 2. Extract messages (sent automatically by useChat)
     const messages: UIMessage[] = body.messages;
+    console.log("74", messages);
+    console.log("75", messages[0].parts);
 
     if (!messages || messages.length === 0) {
       return new Response(JSON.stringify({ error: "No messages provided" }), {
@@ -77,14 +87,35 @@ export async function POST(req: Request) {
       attachments: body.attachments,
     });
 
+    const lastUserMessageIndex = messages.length - 1;
+    console.log(lastUserMessageIndex);
+    const lastUserMessage = messages[lastUserMessageIndex];
+    console.log(lastUserMessage);
+
+    const textPart = lastUserMessage.parts.find(
+      (part): part is { type: "text"; text: string } => part.type === "text"
+    );
+    const userText = textPart?.text || "";
+
+    const userMessage: MyUIMessage = {
+      id: createIdGenerator({ prefix: "msg", size: 16 })(),
+      role: "user",
+      parts: [{ type: "text", text: userText }],
+      metadata: {
+        attachments: attachments || [],
+        userMessage: userText,
+      },
+    };
+
+    console.log("110", userMessage);
+
     console.log("[/api/chat] Using model:", model);
 
     // 4. Process attachments if any
     let systemPrompt: string | undefined;
-    const processedMessages = [...messages];
+    // const processedMessages = [...messages];
 
     if (attachments && attachments.length > 0) {
-      // Separate images from documents
       const imageAttachments = attachments.filter((a) => a.type === "image");
       const documentAttachments = attachments.filter((a) =>
         ["pdf", "txt"].includes(a.type)
@@ -95,10 +126,8 @@ export async function POST(req: Request) {
         const documentContents = await Promise.all(
           docxAttachments.map(async (docx) => ({
             title: docx.title,
-            // Use documentUrl from frontend if available (from useGetS3AttachmentUrl)
             content: await fetchDocxContent(
               docx.fileKey,
-
               "documentUrl" in docx ? docx.documentUrl : undefined
             ),
           }))
@@ -106,14 +135,13 @@ export async function POST(req: Request) {
         systemPrompt = buildSystemPromptWithDocuments(documentContents);
       }
 
-      const lastMessageIndex = processedMessages.length - 1;
-      const lastMessage = processedMessages[lastMessageIndex];
+      // const lastMessageIndex = processedMessages.length - 1;
+      // const lastMessage = processedMessages[lastMessageIndex];
 
-      if (lastMessage.role === "user") {
+      if (lastUserMessage.role === "user") {
         if (imageAttachments.length > 0) {
           const imageUrls = await Promise.all(
             imageAttachments.map(async (img) => {
-              // Use the imageUrl if available, otherwise generate presigned URL
               const url =
                 "imageUrl" in img && img.imageUrl
                   ? img.imageUrl
@@ -124,18 +152,15 @@ export async function POST(req: Request) {
               };
             })
           );
-          const existingParts = lastMessage.parts || [];
-          processedMessages[lastMessageIndex] = {
-            ...lastMessage,
-            parts: [
-              ...existingParts,
-              ...imageUrls.map((img) => ({
-                type: "file" as const,
-                mediaType: "image/png",
-                url: img.image,
-              })),
-            ],
-          };
+          // const existingParts = lastUserMessage.parts || [];
+          userMessage.parts = [
+            ...userMessage.parts,
+            ...imageUrls.map((img) => ({
+              type: "file" as const,
+              mediaType: "image/png",
+              url: img.image,
+            })),
+          ];
         }
 
         if (documentAttachments.length > 0) {
@@ -151,31 +176,65 @@ export async function POST(req: Request) {
               };
             })
           );
-          const existingParts = lastMessage.parts || [];
-          processedMessages[lastMessageIndex] = {
-            ...lastMessage,
-            parts: [
-              ...existingParts,
-              ...documentUrls.map((doc) => ({
-                type: "file" as const,
-                mediaType: "application/pdf",
-                url: doc.document,
-              })),
-            ],
-          };
+          userMessage.parts = [
+            ...userMessage.parts,
+            ...documentUrls.map((doc) => ({
+              type: "file" as const,
+              mediaType: "application/pdf",
+              url: doc.document,
+            })),
+          ];
         }
       }
     }
+    console.log("190", userMessage);
+    const convoHistory: MyUIMessage[] = messages.slice(0, -1).map((msg) => {
+      if (msg.role === "assistant") {
+        return msg as MyUIMessage;
+      }
+      return {
+        ...msg,
+        metadata: msg.metadata || {
+          attachments: [],
+          userMessage: msg.parts.find(
+            (part): part is { type: "text"; text: string } =>
+              part.type === "text"
+          )?.text,
+        },
+      };
+    });
+    console.log("206", convoHistory);
 
-    // 5. Stream text using OpenRouter
-    const result = streamText({
-      model: openrouter.chat(model),
-      system: systemPrompt,
-      messages: convertToModelMessages(processedMessages),
+    const finalMessages: MyUIMessage[] =
+      messages.length > 1 ? [...convoHistory, userMessage] : [userMessage];
+
+    console.log(
+      "211 📤 Sending to stream - finalMessages:",
+      JSON.stringify(finalMessages, null, 2)
+    );
+
+    const stream = createUIMessageStream<MyUIMessage>({
+      originalMessages: finalMessages,
+      generateId: createIdGenerator({ prefix: "msg", size: 16 }),
+      execute: async ({ writer }) => {
+        const result = streamText({
+          model: openrouter.chat(model),
+          system: systemPrompt,
+          messages: convertToModelMessages(finalMessages),
+        });
+        writer.merge(result.toUIMessageStream());
+      },
     });
 
+    // 5. Stream text using OpenRouter
+    // const result = streamText({
+    //   model: openrouter.chat(model),
+    //   system: systemPrompt,
+    //   messages: convertToModelMessages(processedMessages),
+    // });
+
     // 6. Return streaming response (AI SDK protocol)
-    return result.toUIMessageStreamResponse();
+    return createUIMessageStreamResponse({ stream });
   } catch (error) {
     console.error("[/api/chat] Error:", error);
 

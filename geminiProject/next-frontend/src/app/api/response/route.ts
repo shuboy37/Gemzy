@@ -55,10 +55,10 @@ export async function POST(req: NextRequest) {
     }
     if (
       files.length > 0 &&
-      normalizedModel !== "gemini-2.0-flash-exp-image-generation"
+      normalizedModel !== "gemini-2.5-flash-exp-image-generation"
     ) {
-      effectiveModel = "gemini-2.0-flash-exp-image-generation";
-      effectiveModelDisplayName = "Gemini Nano Banana"; // Set display name for image gen model
+      effectiveModel = "gemini-2.5-flash-exp-image-generation";
+      effectiveModelDisplayName = "Gemini 2.5 Flash Image (Nano Banana)";
       console.log(
         `[API Route] Image generation detected with incompatible model '${model}'. Switched to '${effectiveModel}'.`
       );
