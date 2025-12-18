@@ -2,12 +2,11 @@
 
 import { useState } from "react";
 import { LogoSVG } from "@/components/ui/LogoSVG";
-import { MiniBar } from "@/components/ui/Minibar";
 import { motion } from "motion/react";
 import {
   PanelRightClose,
   PanelLeftClose,
-  ChevronsDownUp,
+  ChevronsLeftRight ,
   Search,
   MessageSquarePlus,
   Images,
@@ -16,6 +15,7 @@ import {
   Settings,
   LogOut,
   MoreHorizontal,
+  ChevronsLeft,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -24,8 +24,13 @@ import {
   DropdownMenuItem,
 } from "./dropdown-menu";
 import { ConditionalTooltip } from "./ConditionalTooltip";
-export const Sidebar = () => {
-  const [isCollapsible, setIsCollapsible] = useState(false);
+
+interface SidebarProps {
+  isCollapsible: boolean;
+  setIsCollapsible: (value: boolean) => void;
+}
+
+export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHoverable, setIsHoverable] = useState(false);
   const [isChatsExpanded, setIsChatsExpanded] = useState(false);
@@ -195,7 +200,7 @@ export const Sidebar = () => {
                   onClick={() => setIsCollapsible(true)}
                   className="rounded-lg p-2 hover:bg-neutral-700"
                 >
-                  <ChevronsDownUp className="h-5 w-5 text-white" />
+                  <ChevronsLeftRight className="size-5 text-white" />
                 </button>
               </ConditionalTooltip>
 
@@ -398,7 +403,5 @@ export const Sidebar = () => {
         )}
       </motion.nav>
     </motion.div>
-  ) : (
-    <MiniBar setIsCollapsible={setIsCollapsible} />
-  );
+  ) : null;
 };

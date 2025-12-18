@@ -28,7 +28,7 @@ export const ConditionalTooltip = ({
         <TooltipTrigger asChild>{children}</TooltipTrigger>
         <TooltipContent
           side={side}
-          className={`text-normal ml-2.5 scale-105 bg-stone-100 p-2.5 text-stone-800 transition-all duration-200 ${className}`}
+          className={`ml-2.5 scale-100 bg-stone-100 px-2 py-1 text-xs text-stone-800 transition-all duration-200 ${className}`}
           arrowClassName={arrowClassName}
         >
           {content}
