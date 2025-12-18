@@ -141,12 +141,12 @@ export const Chatbox = ({
             )}
             <motion.div
               transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-              className={`w-full resize-none rounded-xl bg-neutral-900 font-medium shadow-[0_1px_0_#4b5563] transition-all duration-300 ${
+              className={`w-full resize-none rounded-2xl border border-white/20 bg-neutral-900/40 font-medium shadow-[0_0_50px_-12px_rgba(0,0,0,0.7)] ring-1 ring-white/10 backdrop-blur-3xl transition-all duration-300 ${
                 isDragging &&
                 "border-indigo-200 shadow-[0_4px_12px_rgba(99,102,241,0.15)]"
               } ${
-                hasContent && "shimmer-active border-transparent bg-black"
-              } ${isFocused && "ring-1 ring-indigo-600 ring-offset-1"}`}
+                hasContent && "shimmer-active border-white/20 bg-neutral-900/40"
+              } ${isFocused && "ring-indigo-500/50"}`}
             >
               <div
                 className={`flex items-center gap-2 ${attachments.length > 0 && "p-2"}`}
@@ -206,7 +206,9 @@ export const Chatbox = ({
                         variant="secondary"
                         size="icon"
                         className="bg-stone-800"
-                        disabled={!selectedModelConfig?.isFileSupported}
+                        disabled={
+                          !selectedModelConfig?.isFileSupported || hasUploading
+                        }
                       >
                         <Paperclip className="size-5 text-stone-50" />
                       </DuolingoButton>

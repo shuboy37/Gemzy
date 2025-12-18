@@ -1,10 +1,11 @@
 "use client";
 import React from "react";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Textarea } from "@/components/ui/TextArea";
 import { Orb } from "@/components/ui/Orb";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { motion } from "motion/react";
+
 import {
   $createParagraphNode,
   $getRoot,
@@ -18,12 +19,13 @@ import { FileUpload } from "./ui/FileUpload";
 import { useAttachments } from "@/hooks/use-attachments";
 import { Chatbox } from "./Chatbox";
 import { useGemzyChat } from "@/hooks/use-gemzy-chat";
+import { AttachmentItem } from "./AttachmentItem";
 
 interface ChatInterfaceProps {}
 
 export default function ChatInterface({}: ChatInterfaceProps) {
   const [files, setFiles] = useState<File[]>([]);
-  const { addChatAttachment, attachments, removeAttachment } = useAttachments();
+  const { addChatAttachment, attachments } = useAttachments();
   const [editor] = useLexicalComposerContext();
 
   // Use the new AI SDK powered hook
@@ -36,6 +38,37 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     status,
     error,
   } = useGemzyChat();
+
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLDivElement>(null);
+  const [inputHeight, setInputHeight] = useState(0);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, status, inputHeight]);
+
+  useEffect(() => {
+    if (!inputRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        // Use offsetHeight to include padding/borders if needed,
+        // but contentRect is usually fine for ResizeObserver.
+        // Let's use the element's offsetHeight for accuracy with padding.
+        if (entry.target instanceof HTMLElement) {
+          setInputHeight(entry.target.offsetHeight);
+        }
+      }
+    });
+
+    observer.observe(inputRef.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   const onSubmit = useCallback(
     (text: string) => {
@@ -142,87 +175,120 @@ export default function ChatInterface({}: ChatInterfaceProps) {
   };
 
   return (
-    <div
-      className={`flex h-full w-full flex-col items-center px-12 pb-10 transition-all duration-500 ${
-        hasMessages ? "justify-end" : "justify-center space-y-20"
-      }`}
-    >
-      {/* Hero Section - Show when no messages */}
-      {!hasMessages && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -20 }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="relative flex items-center justify-center space-x-5"
-        >
-          <Orb className="absolute -z-10 translate-y-1" />
-          <h1 className="text-center text-2xl leading-tight font-semibold text-pretty whitespace-pre-wrap text-white select-none sm:text-3xl md:text-4xl lg:text-5xl">
-            Say it. I'll make it real.
-          </h1>
-        </motion.div>
-      )}
+    <div className="relative h-full w-full overflow-hidden">
+      <div
+        className="custom-scrollbar h-full w-full overflow-y-auto transition-[padding] duration-100 ease-out"
+        style={{ paddingBottom: hasMessages ? `${inputHeight}px` : "0px" }}
+      >
+        {!hasMessages && (
+          <div className="flex h-1/2 flex-col items-center justify-center pb-18">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="relative flex items-center justify-center space-x-5"
+            >
+              <Orb className="absolute -z-10 translate-y-1" />
+              <h1 className="text-center text-2xl leading-tight font-semibold text-pretty whitespace-pre-wrap text-white select-none sm:text-3xl md:text-4xl lg:text-5xl">
+                Say it. I'll make it real.
+              </h1>
+            </motion.div>
+          </div>
+        )}
 
-      {/* Messages Area - Moved ABOVE input for correct flow */}
-      {hasMessages && (
-        <div className="flex w-full max-w-3xl flex-1 flex-col items-center space-y-6 overflow-y-auto pb-10">
-          <div className="flex w-full flex-col space-y-4 px-4">
-            {messages.map((message) => {
-              const textContent = getMessageText(message.parts);
+        {hasMessages && (
+          <div className="mx-auto flex w-full max-w-2xl flex-col items-center space-y-6 px-4 pt-5">
+            <div className="flex w-full flex-col space-y-10">
+              {messages.map((message) => {
+                const textContent = getMessageText(message.parts);
+                const attachments = message.metadata?.attachments || [];
+                const hasAttachments =
+                  attachments.length > 0 && message.role === "user";
 
-              return (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                >
+                return (
                   <div
-                    className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                      message.role === "user"
-                        ? "bg-blue-600 text-white"
-                        : "bg-neutral-800 text-white"
-                    }`}
+                    key={message.id}
+                    className={`flex w-full ${message.role === "user" ? "justify-end" : "justify-start"}`}
                   >
-                    {textContent || (
-                      <span className="animate-pulse text-neutral-400">
-                        Thinking...
-                      </span>
-                    )}
+                    <div className="max-w-[80%] space-y-2">
+                      {/* Attachments above message for user */}
+                      {hasAttachments && (
+                        <div className="flex space-x-2">
+                          {attachments.map((att: any) => (
+                            <AttachmentItem
+                              key={att.id}
+                              attachment={{
+                                id: att.id,
+                                type: att.type,
+                                fileKey: att.fileKey,
+                                attachmentUrl: att.imageUrl || att.documentUrl,
+                                title: att.title,
+                                variant: "chat",
+                              }}
+                            />
+                          ))}
+                        </div>
+                      )}
+                      {/* Message text bubble */}
+
+                      <div
+                        className={`rounded-2xl px-5 py-4 ${
+                          message.role === "user"
+                            ? "bg-black/70 text-white"
+                            : "bg-zinc-800 text-white"
+                        }`}
+                      >
+                        {textContent ? textContent : "Thinking..."}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {/* Streaming indicator */}
+              {status === "submitted" && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] rounded-lg bg-neutral-800 px-5 py-4">
+                    <span className="animate-pulse text-neutral-400">
+                      Thinking...
+                    </span>
                   </div>
                 </div>
-              );
-            })}
+              )}
+              <div ref={messagesEndRef} />
+            </div>
 
-            {/* Streaming indicator */}
-            {status === "submitted" && (
-              <div className="flex justify-start">
-                <div className="max-w-[80%] rounded-lg bg-neutral-800 px-4 py-2">
-                  <span className="animate-pulse text-neutral-400">
-                    Thinking...
-                  </span>
-                </div>
+            {/* Error display */}
+            {error && (
+              <div className="w-full rounded-lg bg-red-900/50 px-4 py-2 text-red-200">
+                Error: {error.message}
               </div>
             )}
           </div>
+        )}
+      </div>
 
-          {/* Error display */}
-          {error && (
-            <div className="w-full rounded-lg bg-red-900/50 px-4 py-2 text-red-200">
-              Error: {error.message}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Input Area */}
-      <FileUpload onFilesAdded={handleAddedFiles}>
-        <motion.div
-          layout // <--- This magic prop handles the smooth position change
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 10 }}
-          transition={{ duration: 0.5, ease: "easeInOut" }}
-          className="flex w-full items-center justify-center"
+      {/* Fixed Input Area */}
+      <motion.div
+        initial={
+          !hasMessages
+            ? { opacity: 0, bottom: "50%", y: "50%" }
+            : { opacity: 0, bottom: 0, y: 0 }
+        }
+        animate={
+          !hasMessages
+            ? { opacity: 1, bottom: "50%", y: "50%" }
+            : { opacity: 1, bottom: 0, y: 0 }
+        }
+        transition={{ duration: 0.5, ease: "easeInOut" }}
+        className="pointer-events-none absolute right-0 left-0 z-50 flex w-full justify-center px-4"
+      >
+        <div
+          ref={inputRef}
+          className="pointer-events-auto w-full max-w-2xl pb-6"
         >
-          <div className="w-full max-w-2xl">
+          <FileUpload onFilesAdded={handleAddedFiles}>
             <Chatbox
               onSubmitHandler={onSubmitHandler}
               handleAddedFiles={handleAddedFiles}
@@ -230,9 +296,9 @@ export default function ChatInterface({}: ChatInterfaceProps) {
               files={files}
               setFiles={setFiles}
             />
-          </div>
-        </motion.div>
-      </FileUpload>
+          </FileUpload>
+        </div>
+      </motion.div>
     </div>
   );
 }
