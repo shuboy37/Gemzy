@@ -1,7 +1,14 @@
 "use client";
 
-import { useChat } from "@ai-sdk/react";
+import { useChat, UIMessage } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+
+type MetaData = {
+  attachments?: any[];
+  userMessage?: string;
+};
+
+type MyUIMessage = UIMessage<MetaData>;
 import { useAtomValue } from "jotai";
 import { selectedModel } from "@/stores/ModelStore";
 import { useCallback, useMemo, useRef, useEffect } from "react";
@@ -54,7 +61,7 @@ function prepareAttachmentsForAPI(
           id: att.id,
           type: "pdf" as const,
           fileKey: att.fileKey,
-          documentUrl: att.attachmentUrl, // Pass presigned URL from frontend
+          documentUrl: att.attachmentUrl,
           title: att.title,
         } satisfies ChatAttachment;
       }
@@ -64,7 +71,7 @@ function prepareAttachmentsForAPI(
           id: att.id,
           type: "docx" as const,
           fileKey: att.fileKey,
-          documentUrl: att.attachmentUrl, // Pass presigned URL from frontend
+          documentUrl: att.attachmentUrl,
           title: att.title,
         } satisfies ChatAttachment;
       }
@@ -74,7 +81,7 @@ function prepareAttachmentsForAPI(
           id: att.id,
           type: "txt" as const,
           fileKey: att.fileKey,
-          documentUrl: att.attachmentUrl, // Pass presigned URL from frontend
+          documentUrl: att.attachmentUrl,
           title: att.title,
         } satisfies ChatAttachment;
       }
@@ -96,11 +103,14 @@ export function useGemzyChat() {
 
   const attachmentsRef = useRef<ChatAttachment[]>([]);
   const modelIdRef = useRef(modelId);
+  // Store attachments by message ID for client-side injection
+  const messageAttachmentsRef = useRef<Map<string, ChatAttachment[]>>(
+    new Map()
+  );
 
   // Keep modelId ref in sync with current value
   useEffect(() => {
     modelIdRef.current = modelId;
-    console.log("[useGemzyChat] Model changed to:", modelId);
   }, [modelId]);
 
   // Keep refs in sync with current values
@@ -117,7 +127,7 @@ export function useGemzyChat() {
   // Check if ready to send
   const isReady = !hasUploading && areAttachmentsReady(attachments);
 
-  const chat = useChat({
+  const chat = useChat<MyUIMessage>({
     transport: new DefaultChatTransport({
       api: "/api/chat",
       body: () => ({
@@ -139,10 +149,6 @@ export function useGemzyChat() {
     },
   });
 
-  /**
-   * Send a message with attachments
-   * Attachments are automatically included from the context
-   */
   const sendWithAttachments = useCallback(
     (text: string) => {
       if (!text.trim() && attachments.length === 0) {
@@ -160,6 +166,12 @@ export function useGemzyChat() {
         return;
       }
 
+      // Store attachments for this message (use text as temporary key)
+      const messageKey = `pending_${text.trim()}`;
+      if (preparedAttachments.length > 0) {
+        messageAttachmentsRef.current.set(messageKey, [...preparedAttachments]);
+      }
+
       // Send the message
       chat.sendMessage({ text });
 
@@ -171,9 +183,6 @@ export function useGemzyChat() {
     [chat, attachments, hasUploading, removeAttachment]
   );
 
-  /**
-   * Get the latest assistant message text (for compatibility)
-   */
   const latestResponse = useMemo(() => {
     const assistantMessages = chat.messages.filter(
       (m) => m.role === "assistant"
@@ -182,7 +191,6 @@ export function useGemzyChat() {
 
     const lastMessage = assistantMessages[assistantMessages.length - 1];
 
-    // Extract text from message parts
     return lastMessage.parts
       .filter(
         (part): part is { type: "text"; text: string } => part.type === "text"
@@ -191,15 +199,51 @@ export function useGemzyChat() {
       .join("");
   }, [chat.messages]);
 
-  /**
-   * Check if currently streaming
-   */
   const isStreaming =
     chat.status === "streaming" || chat.status === "submitted";
 
+  // Inject attachments into user messages
+  const messagesWithAttachments: MyUIMessage[] = useMemo(() => {
+    return chat.messages.map((msg) => {
+      if (msg.role === "user") {
+        // Extract text from message
+        const textContent = msg.parts
+          .filter(
+            (part): part is { type: "text"; text: string } =>
+              part.type === "text"
+          )
+          .map((part) => part.text)
+          .join("");
+
+        // Try to find stored attachments (first by message ID, then by text)
+        let stored = messageAttachmentsRef.current.get(msg.id);
+        if (!stored) {
+          const pendingKey = `pending_${textContent.trim()}`;
+          stored = messageAttachmentsRef.current.get(pendingKey);
+          // Move from pending to actual message ID
+          if (stored) {
+            messageAttachmentsRef.current.set(msg.id, stored);
+            messageAttachmentsRef.current.delete(pendingKey);
+          }
+        }
+
+        if (stored && stored.length > 0) {
+          return {
+            ...msg,
+            metadata: {
+              attachments: stored,
+              userMessage: textContent,
+            },
+          };
+        }
+      }
+      return msg;
+    });
+  }, [chat.messages]);
+
   return {
     // Original useChat returns
-    messages: chat.messages,
+    messages: messagesWithAttachments,
     sendMessage: chat.sendMessage,
     status: chat.status,
     error: chat.error,
