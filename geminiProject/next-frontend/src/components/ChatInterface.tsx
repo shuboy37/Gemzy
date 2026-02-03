@@ -222,7 +222,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                                 id: att.id,
                                 type: att.type,
                                 fileKey: att.fileKey,
-                                attachmentUrl: att.imageUrl || att.documentUrl,
+                                url: att.imageUrl || att.documentUrl,
                                 title: att.title,
                                 variant: "chat",
                               }}

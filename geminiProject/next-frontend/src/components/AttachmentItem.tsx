@@ -66,7 +66,7 @@ function DocumentAttachment({
     "uploadProgress" in attachment &&
     !attachment.isUploadDone &&
     attachment.uploadProgress < 100;
-  const uploadProgress =
+  const uploadProgress =              
     "uploadProgress" in attachment ? attachment.uploadProgress : 0;
 
   const circumference = 2 * Math.PI * 12;
@@ -77,9 +77,9 @@ function DocumentAttachment({
     if (
       getAttachmentS3Url &&
       "fileKey" in attachment &&
-      !("attachmentUrl" in attachment && attachment.attachmentUrl)
+      !("url" in attachment && attachment.url)
     ) {
-      updateAttachment(attachment.id, { attachmentUrl: getAttachmentS3Url });
+      updateAttachment(attachment.id, { url: getAttachmentS3Url });
     }
   }, [getAttachmentS3Url, attachment.id, updateAttachment]);
 
@@ -164,9 +164,9 @@ function ImageAttachment({
     if (
       getAttachmentS3Url &&
       "fileKey" in attachment &&
-      !("attachmentUrl" in attachment && attachment.attachmentUrl)
+      !("url" in attachment && attachment.url)
     ) {
-      updateAttachment(attachment.id, { attachmentUrl: getAttachmentS3Url });
+      updateAttachment(attachment.id, { url: getAttachmentS3Url });
     }
   }, [getAttachmentS3Url, attachment.id, updateAttachment]);
 
