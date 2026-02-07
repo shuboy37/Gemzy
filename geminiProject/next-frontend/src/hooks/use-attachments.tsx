@@ -3,25 +3,21 @@ import { PropsWithChildren, useContext, createContext, useState } from "react";
 import { nanoid } from "nanoid";
 import toast from "react-hot-toast";
 import axios from "axios";
+import { ApiAttachment, AttachmentType } from "@/lib/schemas/attachment.schema";
 
 export interface LocalAttachment {
-  variant: "chat";
   id: string;
   title: string;
-  type: "image" | "docx" | "pdf" | "txt" | "video";
-  localUrl?: string;
-  uploadProgress: number;
-  isUploadDone: boolean;
+  type: AttachmentType;
+  variant: "chat";
+  localUrl?: string;        
+  uploadProgress: number;   
+  isUploadDone: boolean;    
 }
 
-export interface Attachment {
-  id: string;
-  type: string;
-  fileKey: string;
-  attachmentUrl?: string;
-  title: string;
+export type Attachment = ApiAttachment & {
   variant: "chat" | "knowledge";
-}
+};
 
 interface AttachmentManager {
   attachments: (Attachment | LocalAttachment)[];
@@ -135,13 +131,12 @@ export const AttachmentsProvider = ({ children }: PropsWithChildren) => {
         })
       );
       return {
-        fileKey,
-        type,
-        localUrl,
         id,
-        variant: "chat" as const,
+        type,
+        fileKey,
         title: file.name,
-      };
+        variant: "chat" as const,
+      } as Attachment;
     },
     onSuccess: (attachment) => {
       setAttachments((prev) => prev.filter((a) => a.id != attachment.id));

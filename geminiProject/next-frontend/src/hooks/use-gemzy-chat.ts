@@ -17,24 +17,22 @@ import {
   LocalAttachment,
   useAttachments,
 } from "@/hooks/use-attachments";
-import { ChatAttachment } from "@/lib/api-types";
+import { ChatAttachment, ChatRequest } from "@/lib/api-types";
 import toast from "react-hot-toast";
+import { ApiAttachment, AttachmentType } from "@/lib/schemas/attachment.schema";
 
 function areAttachmentsReady(
   attachments: (Attachment | LocalAttachment)[]
 ): boolean {
   return attachments.every((att) => {
-    // LocalAttachments (still uploading) are not ready
     if ("uploadProgress" in att && !att.isUploadDone) {
       return false;
     }
-    // Images need imageUrl
-    if (att.type === "image" && "fileKey" in att) {
-      return "attachmentUrl" in att && !!att.attachmentUrl;
-    }
-    // Documents just need fileKey
     if ("fileKey" in att) {
-      return !!att.fileKey;
+      if (["image", "pdf", "txt"].includes(att.type)) {
+        return "url" in att && !!att.url;
+      }
+      return true;
     }
     return false;
   });
@@ -42,57 +40,12 @@ function areAttachmentsReady(
 
 function prepareAttachmentsForAPI(
   attachments: (Attachment | LocalAttachment)[]
-) {
+): ApiAttachment[] {
   return attachments
     .filter((att): att is Attachment => "fileKey" in att && !!att.fileKey)
-    .map((att): ChatAttachment => {
-      if (att.type === "image") {
-        return {
-          id: att.id,
-          type: "image" as const,
-          fileKey: att.fileKey,
-          imageUrl: att.attachmentUrl || "",
-          title: att.title,
-        } satisfies ChatAttachment;
-      }
-
-      if (att.type === "pdf") {
-        return {
-          id: att.id,
-          type: "pdf" as const,
-          fileKey: att.fileKey,
-          documentUrl: att.attachmentUrl,
-          title: att.title,
-        } satisfies ChatAttachment;
-      }
-
-      if (att.type === "docx") {
-        return {
-          id: att.id,
-          type: "docx" as const,
-          fileKey: att.fileKey,
-          documentUrl: att.attachmentUrl,
-          title: att.title,
-        } satisfies ChatAttachment;
-      }
-
-      if (att.type === "txt") {
-        return {
-          id: att.id,
-          type: "txt" as const,
-          fileKey: att.fileKey,
-          documentUrl: att.attachmentUrl,
-          title: att.title,
-        } satisfies ChatAttachment;
-      }
-
-      // video or unknown
-      return {
-        id: att.id,
-        type: "video" as const,
-        fileKey: att.fileKey,
-        title: att.title,
-      } satisfies ChatAttachment;
+    .map((att): ApiAttachment => {
+      const { variant, ...apiAttachment } = att;
+      return apiAttachment;
     });
 }
 
@@ -103,34 +56,29 @@ export function useGemzyChat() {
 
   const attachmentsRef = useRef<ChatAttachment[]>([]);
   const modelIdRef = useRef(modelId);
-  // Store attachments by message ID for client-side injection
   const messageAttachmentsRef = useRef<Map<string, ChatAttachment[]>>(
     new Map()
   );
 
-  // Keep modelId ref in sync with current value
   useEffect(() => {
     modelIdRef.current = modelId;
   }, [modelId]);
 
-  // Keep refs in sync with current values
   const preparedAttachments = useMemo(
     () => prepareAttachmentsForAPI(attachments),
     [attachments]
   );
 
-  // Keep attachments ref in sync
   useEffect(() => {
     attachmentsRef.current = preparedAttachments;
   }, [preparedAttachments]);
 
-  // Check if ready to send
   const isReady = !hasUploading && areAttachmentsReady(attachments);
 
   const chat = useChat<MyUIMessage>({
     transport: new DefaultChatTransport({
       api: "/api/chat",
-      body: () => ({
+      body: ():ChatRequest => ({
         model: modelIdRef.current,
         attachments:
           attachmentsRef.current.length > 0
@@ -138,11 +86,9 @@ export function useGemzyChat() {
             : undefined,
       }),
     }),
-    // Called when streaming completes
     onFinish: ({ message }) => {
       console.log("[useGemzyChat] Message complete:", message.id);
     },
-    // Called on error
     onError: (error) => {
       console.error("[useGemzyChat] Error:", error);
       toast.error(error.message || "Failed to send message");
@@ -166,16 +112,13 @@ export function useGemzyChat() {
         return;
       }
 
-      // Store attachments for this message (use text as temporary key)
       const messageKey = `pending_${text.trim()}`;
       if (preparedAttachments.length > 0) {
         messageAttachmentsRef.current.set(messageKey, [...preparedAttachments]);
       }
 
-      // Send the message
       chat.sendMessage({ text });
 
-      // Clear attachments after sending
       attachments.forEach((att) => {
         removeAttachment({ id: att.id });
       });
@@ -202,11 +145,9 @@ export function useGemzyChat() {
   const isStreaming =
     chat.status === "streaming" || chat.status === "submitted";
 
-  // Inject attachments into user messages
   const messagesWithAttachments: MyUIMessage[] = useMemo(() => {
     return chat.messages.map((msg) => {
       if (msg.role === "user") {
-        // Extract text from message
         const textContent = msg.parts
           .filter(
             (part): part is { type: "text"; text: string } =>
@@ -215,12 +156,10 @@ export function useGemzyChat() {
           .map((part) => part.text)
           .join("");
 
-        // Try to find stored attachments (first by message ID, then by text)
         let stored = messageAttachmentsRef.current.get(msg.id);
         if (!stored) {
           const pendingKey = `pending_${textContent.trim()}`;
           stored = messageAttachmentsRef.current.get(pendingKey);
-          // Move from pending to actual message ID
           if (stored) {
             messageAttachmentsRef.current.set(msg.id, stored);
             messageAttachmentsRef.current.delete(pendingKey);
@@ -242,7 +181,6 @@ export function useGemzyChat() {
   }, [chat.messages]);
 
   return {
-    // Original useChat returns
     messages: messagesWithAttachments,
     sendMessage: chat.sendMessage,
     status: chat.status,
@@ -250,7 +188,6 @@ export function useGemzyChat() {
     stop: chat.stop,
     setMessages: chat.setMessages,
 
-    // Gemzy-specific helpers
     sendWithAttachments,
     latestResponse,
     isStreaming,
