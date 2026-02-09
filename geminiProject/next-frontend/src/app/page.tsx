@@ -9,14 +9,6 @@ import ChatInterface from "@/components/ChatInterface";
 import { AttachmentsProvider } from "@/hooks/use-attachments";
 import { lexicalConfig } from "@/lib/lexical-config";
 
-// const ChatInterface = dynamic(() => import("@/components/ChatInterface"), {
-//   loading: () => (
-//     <div className="flex h-64 w-full items-center justify-center">
-//       <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-white"></div>
-//     </div>
-//   ),
-// });
-
 const initialConfig = {
   namespace: "chat-input",
   theme: {
