@@ -7,7 +7,8 @@ import {
   createUIMessageStreamResponse,
 } from "ai";
 import { openrouter } from "@/lib/utils/openrouter";
-import { ChatAttachment, chatRequestSchema } from "@/lib/api-types";
+import { ChatAttachment} from "@/lib/api-types";
+import { chatRequestSchema } from "@/lib/schemas/attachment.schema";
 import { s3Client, BUCKET_NAME } from "@/lib/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
@@ -128,7 +129,7 @@ export async function POST(req: Request) {
             title: docx.title,
             content: await fetchDocxContent(
               docx.fileKey,
-              "documentUrl" in docx ? docx.documentUrl : undefined
+              "url" in docx ? docx.url : undefined
             ),
           }))
         );
@@ -143,8 +144,8 @@ export async function POST(req: Request) {
           const imageUrls = await Promise.all(
             imageAttachments.map(async (img) => {
               const url =
-                "imageUrl" in img && img.imageUrl
-                  ? img.imageUrl
+                "url" in img && img.url
+                  ? img.url
                   : await getPresignedUrl(img.fileKey);
               return {
                 type: "image" as const,
@@ -152,7 +153,6 @@ export async function POST(req: Request) {
               };
             })
           );
-          // const existingParts = lastUserMessage.parts || [];
           userMessage.parts = [
             ...userMessage.parts,
             ...imageUrls.map((img) => ({
@@ -167,8 +167,8 @@ export async function POST(req: Request) {
           const documentUrls = await Promise.all(
             documentAttachments.map(async (doc) => {
               const docUrl =
-                "documentUrl" in doc && doc.documentUrl
-                  ? doc.documentUrl
+                "url" in doc && doc.url
+                  ? doc.url
                   : await getPresignedUrl(doc.fileKey);
               return {
                 type: "document" as const,
