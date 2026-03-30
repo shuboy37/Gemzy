@@ -14,7 +14,7 @@ import { selectedModel } from "@/stores/ModelStore";
 import { useCallback, useMemo, useRef, useEffect } from "react";
 import {
   Attachment,
-  LocalAttachment,
+  LocalAttachment,  
   useAttachments,
 } from "@/hooks/use-attachments";
 import { ChatAttachment, ChatRequest } from "@/lib/api-types";
