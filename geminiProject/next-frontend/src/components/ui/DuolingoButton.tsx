@@ -1,6 +1,6 @@
 "use client";
 
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import { forwardRef, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface DuolingoButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -23,18 +23,18 @@ export const baseStyles =
 
 export const variantStyles = {
   primary:
-    "bg-indigo-600 text-white border bg-clip-padding border-b-2 border-indigo-700 hover:bg-indigo-500 shadow-[0_3px_0_#3730a3] focus-visible:ring-indigo-600",
+    "border border-b-2 border-primary/80 bg-primary bg-clip-padding text-primary-foreground shadow-[0_3px_0_var(--ring)] hover:bg-primary/90 focus-visible:ring-ring",
   secondary:
-    "bg-[#FFFFFF] border bg-clip-padding text-stone-800 border-b-2 border-[#E5E5E5] hover:bg-light-gray shadow-[0_3px_0_#E5E5E5] focus-visible:ring-indigo-200",
+    "border border-b-2 border-border bg-secondary bg-clip-padding text-secondary-foreground shadow-[0_3px_0_var(--border)] hover:bg-secondary/80 focus-visible:ring-ring",
   disabled:
-    "bg-[#E5E5E5] text-[#AFAFAF] border-b-2 border-[#CCCCCC] cursor-not-allowed shadow-[0_3px_0_#CCCCCC]",
-  icon: "bg-indigo-600 text-white border-b-2 border-indigo-700 hover:bg-indigo-500 shadow-[0_3px_0_#4338CA] focus:ring-indigo-600 p-0 flex items-center justify-center focus-visible:ring-indigo-200",
+    "cursor-not-allowed border-b-2 border-border bg-muted text-muted-foreground shadow-[0_3px_0_var(--border)]",
+  icon: "flex items-center justify-center border-b-2 border-primary/80 bg-primary p-0 text-primary-foreground shadow-[0_3px_0_var(--ring)] hover:bg-primary/90 focus:ring-ring focus-visible:ring-ring",
   destructive:
-    "bg-red-500 text-white border-b-2 border-red-600 hover:bg-red-600 shadow-[0_3px_0_#B91C1C] focus:ring-red-500",
+    "border-b-2 border-destructive/80 bg-destructive text-destructive-foreground shadow-[0_3px_0_var(--destructive)] hover:bg-destructive/90 focus:ring-destructive",
   dashedOutline:
-    "bg-white text-gray-600 border-2 bg-clip-padding border-dashed border-stone-300 border-b-[4px] hover:bg-stone-50 focus:ring-gray-400",
+    "border-2 border-b-[4px] border-dashed border-border bg-background bg-clip-padding text-foreground hover:bg-accent focus:ring-ring",
   emerald:
-    "bg-emerald-600 text-white border bg-clip-padding border-b-2 border-emerald-700 hover:bg-emerald-500 shadow-[0_3px_0_#065f46] focus:ring-emerald-600",
+    "border border-b-2 border-primary/80 bg-primary bg-clip-padding text-primary-foreground shadow-[0_3px_0_var(--ring)] hover:bg-primary/90 focus:ring-ring",
 };
 
 export const sizeStyles = {
@@ -44,44 +44,54 @@ export const sizeStyles = {
   icon: "h-10 w-10",
 };
 
-export default function DuolingoButton({
-  children,
-  variant = "primary",
-  size = "md",
-  className,
-  disabled,
-  loading = false,
-  ...props
-}: DuolingoButtonProps) {
-  const variantStyle =
-    disabled || loading ? variantStyles.disabled : variantStyles[variant];
-  const sizeStyle = sizeStyles[size];
+const DuolingoButton = forwardRef<HTMLButtonElement, DuolingoButtonProps>(
+  (
+    {
+      children,
+      variant = "primary",
+      size = "md",
+      className,
+      disabled,
+      loading = false,
+      ...props
+    },
+    ref
+  ) => {
+    const variantStyle =
+      disabled || loading ? variantStyles.disabled : variantStyles[variant];
+    const sizeStyle = sizeStyles[size];
 
-  return (
-    <button
-      className={cn(baseStyles, variantStyle, sizeStyle, className)}
-      disabled={disabled || loading || variant === "disabled"}
-      {...props}
-    >
-      {loading ? (
-        <div className="flex items-center justify-center">
-          <LoadingSpinner variant={variant} />
-          {size !== "icon" && (
-            <span className="ml-2 opacity-80">Loading...</span>
-          )}
-        </div>
-      ) : (
-        children
-      )}
-    </button>
-  );
-}
+    return (
+      <button
+        ref={ref}
+        className={cn(baseStyles, variantStyle, sizeStyle, className)}
+        disabled={disabled || loading || variant === "disabled"}
+        {...props}
+      >
+        {loading ? (
+          <div className="flex items-center justify-center">
+            <LoadingSpinner variant={variant} />
+            {size !== "icon" && (
+              <span className="ml-2 opacity-80">Loading...</span>
+            )}
+          </div>
+        ) : (
+          children
+        )}
+      </button>
+    );
+  }
+);
+
+DuolingoButton.displayName = "DuolingoButton";
+
+export default DuolingoButton;
 
 export function LoadingSpinner({ variant }: { variant: string }) {
   const spinnerColor =
     variant === "secondary" || variant === "dashedOutline"
-      ? "text-gray-300"
-      : "text-white";
+      ? "text-muted-foreground"
+      : "text-primary-foreground";
 
   return (
     <svg

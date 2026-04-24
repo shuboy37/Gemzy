@@ -5,6 +5,7 @@ import {
   Children,
   cloneElement,
   createContext,
+  forwardRef,
   useContext,
   ReactNode,
 } from "react";
@@ -37,12 +38,14 @@ export type FileUploadProps = {
   children: ReactNode;
   multiple?: boolean;
   accept?: string;
+  disabled?: boolean;
 };
 
 function FileUpload({
   onFilesAdded,
   children,
   multiple = true,
+  disabled = false,
 }: FileUploadProps) {
   const { getRootProps, getInputProps, isDragActive, open } = useDropzone({
     onDrop: (acceptedFiles, fileRejections) => {
@@ -62,11 +65,12 @@ function FileUpload({
     multiple,
     noClick: true,
     noKeyboard: true,
+    disabled,
   });
 
   return (
     <FileUploadContext.Provider
-      value={{ isDragging: isDragActive, open, multiple }}
+      value={{ isDragging: !disabled && isDragActive, open, multiple }}
     >
       <div {...getRootProps()} className="w-full">
         <input {...getInputProps()} />
@@ -81,46 +85,50 @@ export type FileUploadTriggerProps =
     asChild?: boolean;
   };
 
-function FileUploadTrigger({
-  asChild = false,
-  className,
-  children,
-  ...props
-}: FileUploadTriggerProps) {
-  const context = useContext(FileUploadContext);
+const FileUploadTrigger = forwardRef<HTMLButtonElement, FileUploadTriggerProps>(
+  ({ asChild = false, className, children, onClick, ...props }, ref) => {
+    const context = useContext(FileUploadContext);
 
-  const handleClick = () => context?.open();
+    const handleClick = () => context?.open();
 
-  if (asChild) {
-    const child = Children.only(children) as React.ReactElement<
-      React.HTMLAttributes<HTMLElement>
-    >;
-    return cloneElement(child, {
-      ...props,
-      role: "button",
-      className: cn(className, child.props.className),
-      onClick: (e: React.MouseEvent) => {
-        e.stopPropagation();
-        handleClick();
-        child.props.onClick?.(e as React.MouseEvent<HTMLElement>);
-      },
-    });
+    if (asChild) {
+      const child = Children.only(children) as React.ReactElement<
+        React.HTMLAttributes<HTMLElement> & { ref?: React.Ref<HTMLElement> }
+      >;
+
+      return cloneElement(child, {
+        ...props,
+        ref,
+        role: "button",
+        className: cn(child.props.className, className),
+        onClick: (e: React.MouseEvent<HTMLElement>) => {
+          e.stopPropagation();
+          onClick?.(e as React.MouseEvent<HTMLButtonElement>);
+          handleClick();
+          child.props.onClick?.(e);
+        },
+      });
+    }
+
+    return (
+      <button
+        ref={ref}
+        type="button"
+        className={className}
+        onClick={(e) => {
+          e.stopPropagation();
+          onClick?.(e);
+          handleClick();
+        }}
+        {...props}
+      >
+        {children}
+      </button>
+    );
   }
+);
 
-  return (
-    <button
-      type="button"
-      className={className}
-      onClick={(e) => {
-        e.stopPropagation();
-        handleClick();
-      }}
-      {...props}
-    >
-      {children}
-    </button>
-  );
-}
+FileUploadTrigger.displayName = "FileUploadTrigger";
 
 type FileUploadContentProps = React.HTMLAttributes<HTMLDivElement>;
 

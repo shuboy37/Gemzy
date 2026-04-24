@@ -1,9 +1,6 @@
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "./Tooltip";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 
 interface ConditionalTooltipProps {
   content: string;
@@ -12,6 +9,7 @@ interface ConditionalTooltipProps {
   side: "top" | "right" | "bottom" | "left";
   className?: string;
   arrowClassName?: string;
+  wrapperClassName?: string;
 }
 
 export const ConditionalTooltip = ({
@@ -21,20 +19,33 @@ export const ConditionalTooltip = ({
   children,
   className,
   arrowClassName,
+  wrapperClassName,
 }: ConditionalTooltipProps) => {
-  if (showTooltip) {
-    return (
+  if (!showTooltip) {
+    return <>{children}</>;
+  }
+
+  const trigger = React.isValidElement(children) ? children : <span>{children}</span>;
+
+  return (
+    <span className={cn("inline-flex", wrapperClassName)}>
       <Tooltip>
-        <TooltipTrigger asChild>{children}</TooltipTrigger>
+        <TooltipTrigger asChild>{trigger}</TooltipTrigger>
         <TooltipContent
           side={side}
-          className={`ml-2.5 scale-100 bg-stone-100 px-2 py-1 text-xs text-stone-800 transition-all duration-200 ${className}`}
-          arrowClassName={arrowClassName}
+          sideOffset={10}
+          className={cn(
+            "z-[160] rounded-md border border-border bg-background px-2.5 py-1.5 text-xs font-medium text-foreground shadow-xl ring-1 ring-black/10 dark:ring-white/15",
+            className
+          )}
+          arrowClassName={cn(
+            "border border-border bg-background ring-1 ring-black/10 dark:ring-white/15",
+            arrowClassName
+          )}
         >
           {content}
         </TooltipContent>
       </Tooltip>
-    );
-  }
-  return <>{children}</>;
+    </span>
+  );
 };
