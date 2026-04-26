@@ -1,29 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useAtomValue, useSetAtom } from "jotai";
 import { LogoSVG } from "@/components/ui/LogoSVG";
+import { useAuth } from "@/hooks/use-auth";
+import { GUEST_COPY, formatGuestUsage } from "@/lib/guest/guest-copy";
 import { motion } from "motion/react";
 import {
   PanelRightClose,
   PanelLeftClose,
-  ChevronsLeftRight ,
+  ChevronsLeftRight,
   Search,
   MessageSquarePlus,
   Images,
   ChevronDown,
   User,
-  Settings,
+  BadgeDollarSign,
   LogOut,
-  MoreHorizontal,
-  ChevronsLeft,
 } from "lucide-react";
+import { ConditionalTooltip } from "./ConditionalTooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuTrigger,
   DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "./dropdown-menu";
-import { ConditionalTooltip } from "./ConditionalTooltip";
+import {
+  guestRemainingAttemptsAtom,
+  guestUsageSnapshotAtom,
+  syncGuestUsageAtom,
+} from "@/stores/GuestStore";
+import toast from "react-hot-toast";
 
 interface SidebarProps {
   isCollapsible: boolean;
@@ -31,9 +41,39 @@ interface SidebarProps {
 }
 
 export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
-  const [isOpen, setIsOpen] = useState(false);
+  const router = useRouter();
+  const [isOpen, setIsOpen] = useState(true);
   const [isHoverable, setIsHoverable] = useState(false);
   const [isChatsExpanded, setIsChatsExpanded] = useState(false);
+  const { user, isAuthenticated, isAuthLoading, isLoggingOut, logout } =
+    useAuth();
+  const isGuestMode = !isAuthenticated && !isAuthLoading;
+  const guestUsage = useAtomValue(guestUsageSnapshotAtom);
+  const guestRemainingAttempts = useAtomValue(guestRemainingAttemptsAtom);
+  const syncGuestUsage = useSetAtom(syncGuestUsageAtom);
+
+  const accountInitials =
+    user?.name
+      ?.split(" ")
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((part) => part[0]?.toUpperCase())
+      .join("") || "U";
+
+  useEffect(() => {
+    syncGuestUsage();
+
+    const storedSidebarState = window.localStorage.getItem("sidebar-open");
+    if (storedSidebarState !== null) {
+      setIsOpen(storedSidebarState === "true");
+    }
+  }, [syncGuestUsage]);
+
+  useEffect(() => {
+    window.localStorage.setItem("sidebar-open", String(isOpen));
+  }, [isOpen]);
+
   const handleClick = () => {
     if (!isOpen) {
       setIsOpen(!isOpen);
@@ -41,6 +81,18 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
       return;
     }
     setIsHoverable(false);
+  };
+
+  const handleSignOut = async () => {
+    if (isLoggingOut) return;
+
+    try {
+      await logout();
+      toast.success("Signed out successfully.");
+      router.refresh();
+    } catch {
+      toast.error("Unable to sign out. Please try again.");
+    }
   };
 
   const springTransitions = {
@@ -144,6 +196,10 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
     },
   ];
 
+  const visibleLinks = isGuestMode
+    ? links.filter((link) => link.name === "New Chat")
+    : links;
+
   return !isCollapsible ? (
     <motion.div
       initial={false}
@@ -153,15 +209,13 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
       onClick={handleClick}
       className={`${
         !isOpen && "cursor-e-resize"
-      } relative h-screen bg-neutral-900/85`}
+      } relative z-30 h-screen overflow-visible bg-sidebar/95 text-sidebar-foreground`}
     >
       <motion.nav
         variants={sideVariants}
         transition={springTransitions.default}
         className={`flex h-full flex-col items-center ${
-          isOpen
-            ? "bg-gradient-to-b from-neutral-950 via-neutral-800 to-neutral-950"
-            : ""
+          isOpen ? "bg-sidebar" : ""
         }`}
       >
         <motion.div className="flex h-20 w-full flex-shrink-0 items-center gap-28 p-2">
@@ -175,12 +229,12 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
               onClick={handleClick}
               onMouseLeave={!isOpen ? () => setIsHoverable(false) : undefined}
               onMouseEnter={!isOpen ? () => setIsHoverable(true) : undefined}
-              className={`flex h-12 w-12 items-center justify-center rounded-lg px-2 transition-all ease-in-out hover:bg-neutral-700 ${
+              className={`flex h-12 w-12 items-center justify-center rounded-lg px-2 transition-all ease-in-out hover:bg-sidebar-accent ${
                 isOpen && ""
               }`}
             >
               {isHoverable && !isOpen && (
-                <PanelRightClose className="h-7 w-7 text-white" />
+                <PanelRightClose className="h-7 w-7 text-sidebar-foreground" />
               )}
               {(!isHoverable || isOpen) && (
                 <LogoSVG className="transition-colors duration-200" />
@@ -194,13 +248,13 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
                 content="Collapse Sidebar"
                 side="bottom"
                 showTooltip={isOpen}
-                className="p-1.5 text-sm"
+                className="p-1.5 text-xs"
               >
                 <button
                   onClick={() => setIsCollapsible(true)}
-                  className="rounded-lg p-2 hover:bg-neutral-700"
+                  className="rounded-lg p-2 hover:bg-sidebar-accent"
                 >
-                  <ChevronsLeftRight className="size-5 text-white" />
+                  <ChevronsLeftRight className="size-5 text-sidebar-foreground" />
                 </button>
               </ConditionalTooltip>
 
@@ -208,20 +262,22 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
                 content="Toggle Sidebar"
                 side="bottom"
                 showTooltip={isOpen}
-                className="p-1.5 text-sm"
+                className="p-1.5 text-xs"
               >
                 <button
                   onClick={() => setIsOpen(!isOpen)}
-                  className="rounded-lg p-2 hover:bg-neutral-700"
+                  className="rounded-lg p-2 hover:bg-sidebar-accent"
                 >
-                  <PanelLeftClose className="h-6 w-6 text-white" />
+                  <PanelLeftClose className="h-6 w-6 text-sidebar-foreground" />
                 </button>
               </ConditionalTooltip>
             </div>
           )}
         </motion.div>
 
-        <motion.div className="flex w-full flex-1 flex-col overflow-hidden">
+        <motion.div
+          className={`flex w-full flex-1 flex-col ${isOpen ? "overflow-hidden" : "overflow-visible"}`}
+        >
           <motion.div
             variants={parentVars}
             initial="closed"
@@ -233,15 +289,15 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
             }
           >
             {isOpen
-              ? links.map((link, index) => (
+              ? visibleLinks.map((link, index) => (
                   <motion.button
                     key={index}
                     initial="closed"
                     animate={isOpen ? "open" : "closed"}
                     variants={childVars}
-                    className="h-10 w-full rounded-3xl transition-colors duration-200 hover:bg-neutral-700"
+                    className="h-10 w-full rounded-3xl transition-colors duration-200 hover:bg-sidebar-accent"
                   >
-                    <span className="ml-1 flex items-center space-x-3 p-2 text-white">
+                    <span className="ml-1 flex items-center space-x-3 p-2 text-sidebar-foreground">
                       {link.icon}
                       <span className="-translate-y-[2.5px] font-sans text-[16px]">
                         {link.name}
@@ -249,30 +305,36 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
                     </span>
                   </motion.button>
                 ))
-              : links.map((link, index) => (
+              : visibleLinks.map((link, index) => (
                   <motion.button
                     key={index}
                     initial="closed"
                     animate={isOpen ? "open" : "closed"}
                     variants={childVars}
-                    className="rounded-lg p-3 transition-colors duration-200 hover:bg-neutral-700"
+                    className="rounded-lg p-3 transition-colors duration-200 hover:bg-sidebar-accent"
                   >
                     {link.icon}
                   </motion.button>
                 ))}
             {!isOpen && (
-              <div className="absolute bottom-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-600">
-                <User className="h-5 w-5 text-white" />
+              <div className="absolute bottom-3 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary">
+                {isGuestMode || isAuthLoading ? (
+                  <User className="h-5 w-5 text-primary-foreground" />
+                ) : (
+                  <span className="text-xs font-semibold text-primary-foreground">
+                    {accountInitials}
+                  </span>
+                )}
               </div>
             )}
           </motion.div>
 
-          {isOpen && (
+          {isOpen && isAuthenticated && (
             <div className="flex w-full flex-1 flex-col overflow-hidden px-2">
               <div className="flex h-[396px] w-full flex-col">
                 <button
                   onClick={() => setIsChatsExpanded(!isChatsExpanded)}
-                  className="flex w-full flex-shrink-0 items-center justify-between rounded-lg px-3 py-2 text-neutral-300/80 transition-all duration-200 hover:bg-neutral-700/50 hover:text-white"
+                  className="flex w-full flex-shrink-0 items-center justify-between rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 >
                   <span className="text-[16px] font-medium">Chats</span>
                   <motion.div
@@ -292,61 +354,61 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
                   >
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Chat with AI Assistant
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Project Discussion
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Code Review Session
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Bug Investigation
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Feature Planning
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Documentation Review
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       API Integration Chat
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Database Design Discussion
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Bug Investigation
                     </motion.div>
                     <motion.div
                       variants={childVars}
-                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-neutral-300/95 transition-all duration-150 hover:bg-neutral-700/30 hover:text-white"
+                      className="text-md cursor-pointer rounded-lg px-3 py-2 text-sidebar-foreground/90 transition-all duration-150 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     >
                       Feature Planning
                     </motion.div>
@@ -358,46 +420,128 @@ export const Sidebar = ({ isCollapsible, setIsCollapsible }: SidebarProps) => {
         </motion.div>
 
         {isOpen && (
-          <div className="absolute bottom-0 left-0 w-full border-t border-neutral-700/50 bg-neutral-800/50">
-            <div className="p-2">
-              <div className="flex items-center gap-3">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-pink-200 to-rose-600">
-                  <User className="h-5 w-5 text-white" />
+          <div className="absolute bottom-0 left-0 w-full border-t border-sidebar-border bg-sidebar-accent/60">
+            <div className="space-y-3 p-3">
+              {isAuthLoading ? (
+                <div className="rounded-xl border border-sidebar-border/60 bg-sidebar p-3">
+                  <p className="text-sm font-medium text-sidebar-foreground">
+                    Checking your session...
+                  </p>
+                  <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                    Loading your account details.
+                  </p>
                 </div>
-                <div className="flex-1">
-                  <div className="truncate text-sm font-medium text-white">
-                    Shubhankar
+              ) : isGuestMode ? (
+                <div className="space-y-3 rounded-xl border border-sidebar-border/60 bg-sidebar p-3">
+                  <div className="flex items-start gap-3">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
+                      <User className="h-4 w-4 text-primary-foreground" />
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-sidebar-foreground">
+                        Guest access
+                      </p>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {GUEST_COPY.sidebarWelcome}
+                      </p>
+                    </div>
                   </div>
-                  <div className="truncate text-xs text-neutral-400">
-                    shubhankar@gemzy.ai
-                  </div>
-                </div>
 
+                  <div className="rounded-lg bg-sidebar-accent/75 px-2.5 py-2 text-xs text-sidebar-foreground">
+                    <p>{formatGuestUsage(guestUsage.usedCount, guestUsage.maxCount)}</p>
+                    <p className="text-muted-foreground">
+                      {guestRemainingAttempts} free messages left in your 24h window
+                    </p>
+                  </div>
+
+                  <p className="text-[11px] leading-relaxed text-muted-foreground">
+                    {GUEST_COPY.sidebarBenefits}
+                  </p>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <Link
+                      href="/login"
+                      className="rounded-md border border-sidebar-border px-3 py-2 text-center text-xs font-medium text-sidebar-foreground transition-colors hover:bg-sidebar-accent"
+                    >
+                      Log in
+                    </Link>
+                    <Link
+                      href="/signup"
+                      className="rounded-md bg-primary px-3 py-2 text-center text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+                    >
+                      Sign up
+                    </Link>
+                  </div>
+                </div>
+              ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button className="rounded p-1 text-neutral-400 transition-all duration-150 hover:bg-neutral-700/50 hover:text-white">
-                      <MoreHorizontal className="h-4 w-4" />
+                    <button className="flex w-full items-center gap-3 rounded-xl border border-sidebar-border/60 bg-sidebar px-3 py-2.5 text-left transition-colors hover:bg-sidebar-accent">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-semibold text-primary-foreground">
+                        {accountInitials}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium text-sidebar-foreground">
+                          {user?.name ?? "Signed in user"}
+                        </p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {user?.email ?? "No email"}
+                        </p>
+                      </div>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
                     </button>
                   </DropdownMenuTrigger>
+
                   <DropdownMenuContent
-                    className={`border-neutral-700 bg-slate-900 shadow-lg ${
-                      isOpen ? "w-[262px]" : "w-auto"
-                    }`}
-                    side="top"
                     align="end"
-                    sideOffset={12}
+                    side="top"
+                    sideOffset={8}
+                    className="w-60 border-sidebar-border bg-sidebar text-sidebar-foreground"
                   >
-                    <DropdownMenuItem className="cursor-pointer text-white outline-none hover:bg-neutral-700">
-                      <Settings className="mr-2 h-4 w-4" />
-                      Settings
+                    <div className="px-2 py-1.5">
+                      <p className="text-xs text-muted-foreground">Signed in as</p>
+                      <p className="truncate text-sm font-medium">
+                        {user?.email ?? "Unknown"}
+                      </p>
+                    </div>
+
+                    <DropdownMenuSeparator className="bg-sidebar-border" />
+
+                    <DropdownMenuItem
+                      onSelect={(event) => {
+                        event.preventDefault();
+                        toast("Profile page coming soon.");
+                      }}
+                    >
+                      <User className="h-4 w-4" />
+                      Profile
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer text-white outline-none hover:bg-neutral-700">
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
+                    <DropdownMenuItem
+                      onSelect={(event) => {
+                        event.preventDefault();
+                        toast("Pricing page coming soon.");
+                      }}
+                    >
+                      <BadgeDollarSign className="h-4 w-4" />
+                      Pricing
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator className="bg-sidebar-border" />
+
+                    <DropdownMenuItem
+                      variant="destructive"
+                      disabled={isLoggingOut}
+                      onSelect={(event) => {
+                        event.preventDefault();
+                        void handleSignOut();
+                      }}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      {isLoggingOut ? "Signing out..." : "Sign out"}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-              </div>
+              )}
             </div>
           </div>
         )}

@@ -48,8 +48,8 @@ export function PlaceholdersAndVanishInput({
   return (
     <form
       onSubmit={handleSubmit}
-      className={`relative mx-auto h-12 w-full overflow-hidden rounded-full bg-white shadow-md transition duration-200 dark:bg-white ${
-        value ? "bg-gray-50" : ""
+      className={`relative mx-auto h-12 w-full overflow-hidden rounded-full bg-card text-card-foreground shadow-md transition duration-200 ${
+        value ? "bg-accent" : ""
       }`}
     >
       <input
@@ -58,8 +58,8 @@ export function PlaceholdersAndVanishInput({
         ref={inputRef}
         value={value}
         type="text"
-        className={`relative z-50 h-full w-full rounded-full border-2 border-green-600 bg-transparent pr-20 pl-4 text-sm font-semibold text-black focus:outline-none sm:pl-10 sm:text-base dark:text-black ${
-          animating ? "text-transparent dark:text-transparent" : ""
+        className={`relative z-50 h-full w-full rounded-full border-2 border-primary bg-transparent pr-20 pl-4 text-sm font-semibold text-foreground focus:outline-none sm:pl-10 sm:text-base ${
+          animating ? "text-transparent" : ""
         }`}
         disabled={disabled}
       />
@@ -73,7 +73,7 @@ export function PlaceholdersAndVanishInput({
               exit={{ y: -15, opacity: 0 }}
               transition={{ duration: 0.3, ease: "linear" }}
               key={`current-placeholder-${currentPlaceholder}`}
-              className="w-full truncate pl-4 text-sm font-normal text-neutral-500 sm:pl-12 sm:text-base dark:text-zinc-500"
+              className="w-full truncate pl-4 text-sm font-normal text-muted-foreground sm:pl-12 sm:text-base"
             >
               {placeholders[currentPlaceholder]}
             </motion.p>

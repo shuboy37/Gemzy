@@ -1,11 +1,13 @@
+"use client";
+
 import {
-  MessageSquareShare,
   ChevronsLeftRight,
   Search,
   MessageSquarePlus,
   Images,
 } from "lucide-react";
 import { ConditionalTooltip } from "./ConditionalTooltip";
+import { useAuth } from "@/hooks/use-auth";
 
 interface NavBarProps {
   isCollapsible: boolean;
@@ -13,54 +15,53 @@ interface NavBarProps {
 }
 
 export const NavBar = ({ isCollapsible, setIsCollapsible }: NavBarProps) => {
-  return (
-    <div className="h-full w-full overflow-hidden bg-transparent">
-      <div className="relative flex h-full w-full items-center justify-between px-3 py-4">
-        {isCollapsible && (
-          <div className="absolute left-6 flex h-12 w-44 divide-x divide-neutral-700 overflow-hidden rounded-xl border border-neutral-700 bg-black/20">
-            <ConditionalTooltip
-              content="Expand Sidebar"
-              side="bottom"
-              showTooltip={true}
-            >
-              <ChevronsLeftRight
-                onClick={() => setIsCollapsible && setIsCollapsible(false)}
-                className="flex h-full w-11 cursor-pointer items-center justify-center p-3 text-white transition-all duration-200 ease-in-out hover:bg-neutral-800 active:scale-95 active:duration-75"
-              />
-            </ConditionalTooltip>
-            <ConditionalTooltip
-              content="New Chat"
-              side="bottom"
-              showTooltip={true}
-            >
-              <MessageSquarePlus className="flex h-full w-11 cursor-pointer items-center justify-center p-3 text-white transition-all duration-200 ease-in-out hover:bg-neutral-800 active:scale-95 active:duration-75" />
-            </ConditionalTooltip>
-            <ConditionalTooltip
-              content="Search"
-              side="bottom"
-              showTooltip={true}
-            >
-              <Search className="flex h-full w-11 cursor-pointer items-center justify-center p-3 text-white transition-all duration-200 ease-in-out hover:bg-neutral-800 active:scale-95 active:duration-75" />
-            </ConditionalTooltip>
-            <ConditionalTooltip
-              content="Library"
-              side="bottom"
-              showTooltip={true}
-            >
-              <Images className="flex h-full w-11 cursor-pointer items-center justify-center p-3 text-white transition-all duration-200 ease-in-out hover:bg-neutral-800 active:scale-95 active:duration-75" />
-            </ConditionalTooltip>
-          </div>
-        )}
+  const { isAuthenticated, isAuthLoading } = useAuth();
+  const isGuestMode = !isAuthenticated && !isAuthLoading;
 
+  if (!isCollapsible) {
+    return null;
+  }
+
+  const navItems = isGuestMode
+    ? [{ label: "New Chat", icon: MessageSquarePlus }]
+    : [
+        { label: "New Chat", icon: MessageSquarePlus },
+        { label: "Search", icon: Search },
+        { label: "Library", icon: Images },
+      ];
+
+  return (
+    <div className="pointer-events-none absolute top-4 left-6 z-40">
+      <div className="pointer-events-auto flex h-12 items-center divide-x divide-border overflow-hidden rounded-xl border border-border bg-card/95 shadow-lg backdrop-blur-md">
         <ConditionalTooltip
-          content="Share Chat"
+          content="Expand Sidebar"
           side="bottom"
           showTooltip={true}
         >
-          <button className="absolute right-8 flex items-center justify-center rounded-lg border border-neutral-700 bg-black/20 p-3 transition-all duration-200 ease-in-out hover:bg-neutral-800 active:scale-95 active:duration-75">
-            <MessageSquareShare className="size-4 text-white" />
+          <button
+            onClick={() => setIsCollapsible && setIsCollapsible(false)}
+            className="flex h-full w-11 cursor-pointer items-center justify-center p-3 text-foreground transition-all duration-200 ease-in-out hover:bg-accent active:scale-95 active:duration-75"
+          >
+            <ChevronsLeftRight className="size-5" />
           </button>
         </ConditionalTooltip>
+
+        {navItems.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <ConditionalTooltip
+              key={item.label}
+              content={item.label}
+              side="bottom"
+              showTooltip={true}
+            >
+              <button className="flex h-full w-11 cursor-pointer items-center justify-center p-3 text-foreground transition-all duration-200 ease-in-out hover:bg-accent active:scale-95 active:duration-75">
+                <Icon className="size-5" />
+              </button>
+            </ConditionalTooltip>
+          );
+        })}
       </div>
     </div>
   );
