@@ -13,13 +13,13 @@ export const ModelInfo = ({
   const modelConfig = getModelConfigByModel(model, data?.allModelsConfigs);
   return (
     <div
-      className={`bg-background/95 hidden w-[280px] rounded-xl border border-gray-700 p-4 backdrop-blur-xl md:block ${
+      className={`hidden w-[280px] rounded-xl border border-border bg-popover/95 p-4 text-popover-foreground backdrop-blur-xl md:block ${
         className || ""
       }`}
     >
       {/* Model Icon and Name */}
       <div className="mb-3 flex items-center gap-3">
-        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-100">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent">
           {getModelIcon(modelConfig.iconType, 17)}
         </div>
         <div className="min-w-0 flex-1">
@@ -40,7 +40,7 @@ export const ModelInfo = ({
         <div className="flex flex-col gap-1.5">
           {!modelConfig.isImageGeneration && (
             <div className="text-muted-foreground flex items-center gap-2 text-xs">
-              <div className="size-1.5 rounded-full bg-cyan-500"></div>
+              <div className="size-1.5 rounded-full bg-primary"></div>
               <span>1 credit per message</span>
             </div>
           )}

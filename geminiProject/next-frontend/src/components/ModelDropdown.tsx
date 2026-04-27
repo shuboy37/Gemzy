@@ -222,16 +222,17 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
   );
   return (
     <div className="relative flex gap-0.5">
-      <div className="z-50 flex max-h-[50vh] w-[424px] flex-col rounded-xl border-2 border-gray-700 bg-black shadow-lg">
-        <div className="grid w-full flex-shrink-0 grid-cols-4 divide-x divide-gray-700 border-b-2 border-gray-700">
+      <div className="z-50 flex max-h-[50vh] w-[424px] flex-col rounded-xl border-2 border-border bg-popover text-popover-foreground shadow-lg">
+        <div className="grid w-full flex-shrink-0 grid-cols-4 divide-x divide-border border-b-2 border-border">
           <ConditionalTooltip
             content="Top Models"
             showTooltip={true}
             side="top"
             className="p-2 text-xs"
+            wrapperClassName="flex w-full justify-center"
           >
             <div
-              className="flex cursor-pointer items-center justify-center py-3 transition-colors hover:bg-gray-800"
+              className="flex w-full cursor-pointer items-center justify-center py-3 transition-colors hover:bg-accent hover:text-accent-foreground"
               onClick={() => {
                 setSelectedCategory("top");
                 setActiveFilters([]);
@@ -240,8 +241,8 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
               <Star
                 className={`size-5 ${
                   selectedCategory === "top"
-                    ? "fill-amber-400 text-amber-400"
-                    : "text-white hover:text-amber-500"
+                    ? "fill-primary text-primary"
+                    : "text-popover-foreground hover:text-primary"
                 }`}
               />
             </div>
@@ -251,9 +252,10 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
             showTooltip={true}
             side="top"
             className="p-2 text-xs"
+            wrapperClassName="flex w-full justify-center"
           >
             <div
-              className="flex cursor-pointer items-center justify-center py-3 transition-colors hover:bg-gray-800"
+              className="flex w-full cursor-pointer items-center justify-center py-3 transition-colors hover:bg-accent hover:text-accent-foreground"
               onClick={() => {
                 setSelectedCategory("all");
                 setActiveFilters([]);
@@ -262,8 +264,8 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
               <LayoutGrid
                 className={`size-5 ${
                   selectedCategory === "all"
-                    ? "text-blue-400"
-                    : "text-white hover:text-blue-400"
+                    ? "text-primary"
+                    : "text-popover-foreground hover:text-primary"
                 }`}
               />
             </div>
@@ -273,9 +275,10 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
             showTooltip={true}
             side="top"
             className="p-2 text-xs"
+            wrapperClassName="flex w-full justify-center"
           >
             <div
-              className="flex cursor-pointer items-center justify-center py-3 transition-colors hover:bg-gray-800"
+              className="flex w-full cursor-pointer items-center justify-center py-3 transition-colors hover:bg-accent hover:text-accent-foreground"
               onClick={() => {
                 setSelectedCategory("bookmarks");
                 setActiveFilters([]);
@@ -284,26 +287,27 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
               <Bookmark
                 className={`size-5 ${
                   selectedCategory === "bookmarks"
-                    ? "fill-amber-500 text-amber-500"
-                    : "text-white hover:text-amber-500"
+                    ? "fill-primary text-primary"
+                    : "text-popover-foreground hover:text-primary"
                 }`}
               />
             </div>
           </ConditionalTooltip>
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <ConditionalTooltip
               content="Filters"
               showTooltip={true}
               side="top"
               className="p-2 text-xs"
+              wrapperClassName="flex w-full justify-center"
             >
               <DropdownMenuTrigger asChild>
-                <div className="flex cursor-pointer items-center justify-center py-3 transition-colors outline-none hover:bg-gray-800">
+                <div className="flex w-full cursor-pointer items-center justify-center py-3 transition-colors outline-none hover:bg-accent hover:text-accent-foreground">
                   <Funnel
                     className={`size-5 ${
                       activeFilters.length > 0
-                        ? "text-rose-fill-rose-400 fill-rose-400"
-                        : "text-white hover:text-rose-400"
+                        ? "fill-gemzy-highlight text-gemzy-highlight"
+                        : "text-popover-foreground hover:text-gemzy-highlight"
                     }`}
                   />
                 </div>
@@ -311,33 +315,33 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
             </ConditionalTooltip>
             <DropdownMenuContent
               align="end"
-              className="z-[100] w-56 border-gray-700 bg-black text-white"
+              className="z-[220] w-56 border-border bg-popover text-popover-foreground"
             >
-              <DropdownMenuLabel className="pointer-events-none text-xs font-semibold tracking-wider text-gray-400 uppercase">
+              <DropdownMenuLabel className="pointer-events-none text-xs font-semibold tracking-wider text-muted-foreground uppercase">
                 Filter Models
               </DropdownMenuLabel>
-              <DropdownMenuSeparator className="bg-gray-700" />
+              <DropdownMenuSeparator className="bg-border" />
               {filterOptions.map((option) => {
                 return (
                   <DropdownMenuCheckboxItem
                     key={option.id}
                     checked={activeFilters.includes(option.id)}
                     onCheckedChange={() => toggleFilter(option.id)}
-                    className="relative cursor-pointer gap-2 pr-9 pl-3 focus:bg-gray-800 focus:text-white [&>span:first-child]:hidden"
+                    className="relative cursor-pointer gap-2 pr-9 pl-3 focus:bg-accent focus:text-accent-foreground [&>span:first-child]:hidden"
                   >
                     <div className="flex flex-1 items-center gap-2">
                       {option.mascotType && (
                         <ModelMascot
                           type={option.mascotType}
                           size={16}
-                          className="shrink-0 text-gray-400"
+                          className="shrink-0 text-muted-foreground"
                         />
                       )}
-                      <span className="text-white">{option.label}</span>
+                      <span className="text-popover-foreground">{option.label}</span>
                     </div>
                     <span className="pointer-events-none absolute right-2 flex size-4 items-center justify-center">
                       {activeFilters.includes(option.id) && (
-                        <Check className="size-4 text-white" strokeWidth={2} />
+                        <Check className="size-4 text-primary" strokeWidth={2} />
                       )}
                     </span>
                   </DropdownMenuCheckboxItem>
@@ -347,15 +351,15 @@ export const ModelDropdown = ({ isPlanMode }: ModelDropdownProps) => {
           </DropdownMenu>
         </div>
 
-        <div className="w-full flex-shrink-0 border-b-2 border-gray-700">
+        <div className="w-full flex-shrink-0 border-b-2 border-border">
           <span className="ml-2 flex space-x-2 p-2">
-            <Search className="size-6 text-gray-400" />
+            <Search className="size-6 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search models..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="ml-1 w-full bg-transparent text-white outline-none placeholder:text-gray-500"
+              className="ml-1 w-full bg-transparent text-popover-foreground outline-none placeholder:text-muted-foreground"
             />
           </span>
         </div>

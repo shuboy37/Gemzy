@@ -45,8 +45,8 @@ export const ModelCard = ({
       className={
         "group relative mx-2 flex cursor-pointer items-center justify-between rounded-lg border border-transparent px-1 py-0.5 transition-all duration-300 " +
         (isModelSelected
-          ? "border-gray-700 bg-gray-700"
-          : "hover:border-gray-700/65 hover:bg-gray-700/65")
+          ? "border-primary/60 bg-primary/10"
+          : "hover:border-border hover:bg-accent/70")
       }
     >
       <div className="flex flex-1 items-center gap-2">
@@ -68,111 +68,116 @@ export const ModelCard = ({
       {/* Right side - Badges and Selection */}
       <div className="flex items-center gap-3">
         {/* Model Badges Stack */}
-        <div className="flex items-center divide-x divide-gray-700/50 overflow-hidden rounded-md border border-gray-700/50 bg-gray-800/30">
+        <div className="flex items-center divide-x divide-border overflow-hidden rounded-md border border-border bg-muted/40">
           {/* Bookmark Icon */}
           <div
             onClick={toggleBookmark}
-            className="group/bookmark flex size-6 cursor-pointer items-center justify-center transition-colors hover:bg-gray-700/50"
+            className="group/bookmark flex size-6 cursor-pointer items-center justify-center transition-colors hover:bg-accent"
           >
             <Bookmark
               className={`size-3.5 transition-colors ${
                 isBookmarked
-                  ? "fill-amber-500 text-amber-500"
-                  : "text-gray-400 group-hover/bookmark:text-amber-500"
+                  ? "fill-primary text-primary"
+                  : "text-muted-foreground group-hover/bookmark:text-primary"
               }`}
             />
           </div>
 
           {modelConfig.isSuperPremium && (
-            <div className="group/super flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-gray-700/50">
+            <div className="group/super flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-accent">
               <ConditionalTooltip
                 content="Super Premium"
                 showTooltip={true}
                 side="top"
                 arrowClassName="opacity-0"
                 className="p-1 text-[10px]"
+                wrapperClassName="flex h-full w-full items-center justify-center"
               >
                 <div>
                   <ModelMascot
                     type="superPremium"
                     size={16}
-                    className="text-gray-400 transition-colors group-hover/super:text-indigo-400"
+                    className="text-muted-foreground transition-colors group-hover/super:text-primary"
                   />
                 </div>
               </ConditionalTooltip>
             </div>
           )}
           {modelConfig.isPremium && !modelConfig.isSuperPremium && (
-            <div className="group/premium flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-gray-700/50">
+            <div className="group/premium flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-accent">
               <ConditionalTooltip
                 content="Premium"
                 showTooltip={true}
                 side="top"
                 arrowClassName="opacity-0"
                 className="p-1 text-[10px]"
+                wrapperClassName="flex h-full w-full items-center justify-center"
               >
                 <div>
                   <ModelMascot
                     type="premium"
                     size={16}
-                    className="text-gray-400 transition-colors group-hover/premium:text-sky-400"
+                    className="text-muted-foreground transition-colors group-hover/premium:text-primary"
                   />
                 </div>
               </ConditionalTooltip>
             </div>
           )}
           {modelConfig.hasReasoning && (
-            <div className="group/reasoning flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-gray-700/50">
+            <div className="group/reasoning flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-accent">
               <ConditionalTooltip
                 content="Reasoning"
                 showTooltip={true}
                 side="top"
                 arrowClassName="opacity-0"
                 className="p-1 text-[10px]"
+                wrapperClassName="flex h-full w-full items-center justify-center"
               >
                 <div>
                   <ModelMascot
                     type="reasoning"
                     size={16}
-                    className="text-gray-400 transition-colors group-hover/reasoning:text-rose-400"
+                    className="text-muted-foreground transition-colors group-hover/reasoning:text-gemzy-highlight"
                   />
                 </div>
               </ConditionalTooltip>
             </div>
           )}
           {modelConfig.isFast && (
-            <div className="group/fast flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-gray-700/50">
+            <div className="group/fast flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-accent">
               <ConditionalTooltip
                 content="Fast"
                 showTooltip={true}
                 side="top"
                 arrowClassName="opacity-0"
                 className="p-1 text-[10px]"
+                wrapperClassName="flex h-full w-full items-center justify-center"
               >
                 <div>
                   <ModelMascot
                     type="fast"
                     size={16}
-                    className="text-gray-400 transition-colors group-hover/fast:text-yellow-400"
+                    className="text-muted-foreground transition-colors group-hover/fast:text-primary"
                   />
                 </div>
               </ConditionalTooltip>
             </div>
           )}
           {modelConfig.isFileSupported && (
-            <div className="group/file flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-gray-700/50">
+            <div className="group/file flex h-6 w-6 cursor-help items-center justify-center transition-colors hover:bg-accent">
               <ConditionalTooltip
                 content="File Support"
                 showTooltip={true}
                 side="top"
                 arrowClassName="opacity-0"
                 className="p-1 text-[10px]"
+                wrapperClassName="flex h-full w-full items-center justify-center"
               >
                 <div>
                   <ModelMascot
                     type="file-support"
                     size={16}
-                    className="text-gray-400 transition-colors group-hover/file:text-blue-400"
+                    className="text-muted-foreground transition-colors group-hover/file:text-primary"
                   />
                 </div>
               </ConditionalTooltip>
@@ -185,12 +190,12 @@ export const ModelCard = ({
           className={
             "flex size-4 items-center justify-center rounded-full border-2 transition-all duration-300 sm:h-5 sm:w-5 " +
             (isModelSelected
-              ? "border-gray-700 bg-gray-700"
-              : "border-border/50 group-hover:border-gray-700/65")
+              ? "border-primary bg-primary"
+              : "border-border/50 group-hover:border-primary/65")
           }
         >
           {isModelSelected && (
-            <Check className="size-2.5 text-green-500 sm:h-3 sm:w-3" />
+            <Check className="size-2.5 text-primary-foreground sm:h-3 sm:w-3" />
           )}
         </div>
       </div>

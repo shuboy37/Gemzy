@@ -111,7 +111,7 @@ export const ModelMascot: React.FC<ModelMascotProps> = ({
 
   return (
     <div
-      className={`inline-flex items-center gap-1.5 rounded-md px-0.5 py-1 text-xs font-medium text-white transition-colors md:px-2 ${className}`}
+      className={`inline-flex items-center gap-1.5 rounded-md px-0.5 py-1 text-xs font-medium text-foreground transition-colors md:px-2 ${className}`}
     >
       {renderIcons()}
     </div>
