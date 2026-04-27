@@ -84,15 +84,15 @@ function DocumentAttachment({
   }, [getAttachmentS3Url, attachment.id, updateAttachment]);
 
   return (
-    <div className="relative flex w-fit items-center gap-2 overflow-hidden rounded-lg bg-pink-100 px-3 py-2">
+    <div className="relative flex w-fit items-center gap-2 overflow-hidden rounded-lg bg-accent px-3 py-2 text-accent-foreground">
       {/* Blur overlay when uploading */}
       {isUploading && (
-        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-black/30 backdrop-opacity-50">
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-lg bg-background/70 backdrop-opacity-50">
           <div className="relative flex items-center justify-center">
             <div className="size-8">
               <svg className="h-full w-full -rotate-90">
                 <circle
-                  className="text-white/30"
+                  className="text-primary/30"
                   strokeWidth="2"
                   stroke="currentColor"
                   fill="transparent"
@@ -101,7 +101,7 @@ function DocumentAttachment({
                   cy="16"
                 />
                 <circle
-                  className="text-white transition-all duration-200"
+                  className="text-primary transition-all duration-200"
                   strokeWidth="2"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
@@ -115,7 +115,7 @@ function DocumentAttachment({
               </svg>
             </div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-[10px] font-medium text-white">
+              <span className="text-[10px] font-medium text-foreground">
                 {Math.round(uploadProgress)}%
               </span>
             </div>
@@ -125,16 +125,16 @@ function DocumentAttachment({
 
       {/* Content */}
       <span className="text-base">{getIcon(attachment.type)}</span>
-      <span className="max-w-[120px] truncate text-sm font-medium text-stone-700">
+      <span className="max-w-[120px] truncate text-sm font-medium text-accent-foreground">
         {attachment.title}
       </span>
 
       {onRemove && !isUploading && (
         <button
           onClick={onRemove}
-          className="ml-1 rounded-full p-1 hover:bg-red-300"
+          className="ml-1 rounded-full p-1 hover:bg-destructive/20"
         >
-          <X className="size-3 text-red-600" />
+          <X className="size-3 text-destructive" />
         </button>
       )}
     </div>
@@ -204,7 +204,7 @@ function ImageAttachment({
     circumference - (uploadProgress / 100) * circumference;
 
   return (
-    <div className="relative flex size-32 flex-col gap-2 rounded-lg bg-stone-200">
+    <div className="relative flex size-32 flex-col gap-2 rounded-lg bg-muted">
       <div className="relative">
         {/* Image with Click-to-Zoom */}
         <Dialog open={isModalOpen}>
@@ -228,7 +228,7 @@ function ImageAttachment({
           {/* Full-screen Modal */}
           <DialogContent
             noClose
-            className="h-fit max-h-[90vh] w-full max-w-6xl border-none bg-black/90 p-4"
+            className="h-fit max-h-[90vh] w-full max-w-6xl border-none bg-background/95 p-4"
           >
             <DialogTitle className="sr-only">Image Zoom View</DialogTitle>
             <div className="relative flex h-full w-full items-center justify-center">
@@ -240,7 +240,7 @@ function ImageAttachment({
                 />
                 <DialogClose asChild>
                   <button
-                    className="absolute top-4 right-4 z-50 rounded-full bg-red-500 p-2 text-white shadow-[0_2px_0_#FFF] backdrop-blur-sm transition-all hover:bg-red-400"
+                    className="absolute top-4 right-4 z-50 rounded-full bg-destructive p-2 text-destructive-foreground shadow-[0_2px_0_var(--background)] backdrop-blur-sm transition-all hover:bg-destructive/90"
                     onClick={() => setIsModalOpen(false)}
                   >
                     <X className="size-5" />
@@ -253,12 +253,12 @@ function ImageAttachment({
 
         {/* Upload Progress Overlay */}
         {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50">
+          <div className="absolute inset-0 flex items-center justify-center rounded-md bg-background/70">
             <div className="relative flex items-center justify-center">
               <div className="h-10 w-10">
                 <svg className="h-full w-full -rotate-90">
                   <circle
-                    className="text-white/30"
+                    className="text-primary/30"
                     strokeWidth="2"
                     stroke="currentColor"
                     fill="transparent"
@@ -267,7 +267,7 @@ function ImageAttachment({
                     cy="20"
                   />
                   <circle
-                    className="text-white transition-all duration-200"
+                    className="text-primary transition-all duration-200"
                     strokeWidth="2"
                     strokeDasharray={circumference}
                     strokeDashoffset={strokeDashoffset}
@@ -281,7 +281,7 @@ function ImageAttachment({
                 </svg>
               </div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <span className="text-xs font-medium text-white">
+                <span className="text-xs font-medium text-foreground">
                   {Math.round(uploadProgress)}%
                 </span>
               </div>
@@ -293,7 +293,7 @@ function ImageAttachment({
         {onRemove && !isUploading && (
           <button
             onClick={onRemove}
-            className="absolute top-1.5 right-1.5 z-20 flex size-6 shrink-0 items-center justify-center rounded-full border border-white/20 bg-red-500 text-white shadow-lg hover:bg-red-600"
+            className="absolute top-1.5 right-1.5 z-20 flex size-6 shrink-0 items-center justify-center rounded-full border border-border/40 bg-destructive text-destructive-foreground shadow-lg hover:bg-destructive/90"
           >
             <X className="size-3" />
           </button>

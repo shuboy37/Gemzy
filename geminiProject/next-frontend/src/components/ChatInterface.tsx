@@ -1,10 +1,17 @@
 "use client";
-import React from "react";
-import { useState, useEffect, useCallback, useRef } from "react";
-import { Textarea } from "@/components/ui/TextArea";
+import {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  type MouseEvent,
+} from "react";
+import { useAtomValue } from "jotai";
+import { useRouter } from "next/navigation";
 import { Orb } from "@/components/ui/Orb";
 import { useLexicalComposerContext } from "@lexical/react/LexicalComposerContext";
 import { motion } from "motion/react";
+import { MessageSquareShare } from "lucide-react";
 
 import {
   $createParagraphNode,
@@ -16,28 +23,101 @@ import {
   PASTE_COMMAND,
 } from "lexical";
 import { FileUpload } from "./ui/FileUpload";
-import { useAttachments } from "@/hooks/use-attachments";
+import { type Attachment, useAttachments } from "@/hooks/use-attachments";
 import { Chatbox } from "./Chatbox";
 import { useGemzyChat } from "@/hooks/use-gemzy-chat";
 import { AttachmentItem } from "./AttachmentItem";
+import { AssistantMessageContent } from "@/components/chat/AssistantMessageContent";
+import { selectedToolAtom } from "@/stores/ToolStore";
+import { ChatAttachment } from "@/lib/api-types";
+import { ThemeToggle } from "./ui/ThemeToggle";
+import { ConditionalTooltip } from "./ui/ConditionalTooltip";
+import toast from "react-hot-toast";
+import { useAuth } from "@/hooks/use-auth";
+import { useChatSessionReset } from "@/hooks/use-chat-session-reset";
 
-interface ChatInterfaceProps {}
+function ImageGenerationLoadingCard() {
+  const blocks = Array.from({ length: 144 }, (_, i) => i);
 
-export default function ChatInterface({}: ChatInterfaceProps) {
+  return (
+    <div className="border-border bg-card text-card-foreground w-full max-w-md overflow-hidden rounded-2xl border p-3">
+      <div className="text-muted-foreground mb-3 text-sm">
+        Generating your image...
+      </div>
+      <div className="bg-muted grid aspect-square grid-cols-12 gap-1 overflow-hidden rounded-xl p-2">
+        {blocks.map((block) => (
+          <div
+            key={block}
+            className="bg-primary/10 animate-pulse rounded-[4px]"
+            style={{
+              animationDelay: `${(block % 12) * 80}ms`,
+              animationDuration: `${1.2 + (block % 5) * 0.15}s`,
+            }}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function toRenderableAttachment(attachment: ChatAttachment): Attachment {
+  const base = {
+    id: attachment.id,
+    fileKey: attachment.fileKey,
+    title: attachment.title,
+    variant: "chat" as const,
+  };
+
+  if (attachment.type === "video") {
+    return {
+      ...base,
+      type: "video",
+    };
+  }
+
+  if (attachment.type === "docx") {
+    return attachment.url
+      ? {
+          ...base,
+          type: "docx",
+          url: attachment.url,
+        }
+      : {
+          ...base,
+          type: "docx",
+        };
+  }
+
+  return {
+    ...base,
+    type: attachment.type,
+    url: attachment.url,
+  };
+}
+
+export default function ChatInterface() {
+  const router = useRouter();
   const [files, setFiles] = useState<File[]>([]);
-  const { addChatAttachment, attachments } = useAttachments();
+  const { addChatAttachment, attachments, clearAttachments } = useAttachments();
   const [editor] = useLexicalComposerContext();
+  const selectedTool = useAtomValue(selectedToolAtom);
+  const { user, isAuthenticated, isAuthLoading, isLoggingOut } = useAuth();
+  const { resetVersion } = useChatSessionReset();
+  const isGuestMode = !isAuthenticated && !isAuthLoading;
+
+  const heroEffectRef = useRef<HTMLDivElement>(null);
+  const heroOverlayRef = useRef<HTMLDivElement>(null);
+  const isHeroHoverRef = useRef(false);
+  const lastResetVersionRef = useRef(resetVersion);
+  const revealRef = useRef(0);
+  const rafIdRef = useRef<number | null>(null);
+  const mouseRef = useRef({ x: 0, y: 0 });
+  const maskYRef = useRef(0);
+  const maskInitializedRef = useRef(false);
 
   // Use the new AI SDK powered hook
-  const {
-    messages,
-    sendWithAttachments,
-    isStreaming,
-    isReady,
-    latestResponse,
-    status,
-    error,
-  } = useGemzyChat();
+  const { messages, sendWithAttachments, isStreaming, isReady, status, error } =
+    useGemzyChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLDivElement>(null);
@@ -70,16 +150,44 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    if (resetVersion === lastResetVersionRef.current) {
+      return;
+    }
+
+    lastResetVersionRef.current = resetVersion;
+    setFiles([]);
+    clearAttachments();
+    editor.update(() => {
+      const root = $getRoot();
+      root.clear();
+      root.append($createParagraphNode());
+    });
+  }, [clearAttachments, editor, resetVersion]);
+
   const onSubmit = useCallback(
-    (text: string) => {
+    async (text: string) => {
       if (!text.trim() && attachments.length === 0) return;
 
-      sendWithAttachments(text);
+      const result = await sendWithAttachments(text);
+
+      if (result === "guest-limit-reached") {
+        router.push("/signup");
+        return;
+      }
+
+      if (result === "auth-loading") {
+        return;
+      }
+
+      if (result === "logging-out") {
+        return;
+      }
 
       // Clear files state after sending
       setFiles([]);
     },
-    [sendWithAttachments, attachments.length]
+    [attachments.length, router, sendWithAttachments]
   );
 
   const onSubmitHandler = useCallback(() => {
@@ -97,10 +205,30 @@ export default function ChatInterface({}: ChatInterfaceProps) {
 
   const handleAddedFiles = useCallback(
     (newFiles: File[]) => {
+      if (isLoggingOut) {
+        toast.error("Signing you out. Please wait a moment.");
+        return;
+      }
+
+      if (isAuthLoading) {
+        toast.error("Checking your session. Please try again in a moment.");
+        return;
+      }
+
+      if (isGuestMode) {
+        toast.error("Attachments are unavailable for guests.");
+        return;
+      }
+
+      if (selectedTool === "web-search") {
+        toast.error("Attachments are unavailable when Web Search is on.");
+        return;
+      }
+
       setFiles((prev) => [...prev, ...newFiles]);
       newFiles.forEach(addChatAttachment);
     },
-    [addChatAttachment]
+    [addChatAttachment, isAuthLoading, isGuestMode, isLoggingOut, selectedTool]
   );
 
   useEffect(() => {
@@ -133,6 +261,10 @@ export default function ChatInterface({}: ChatInterfaceProps) {
     const removePasteCommand = editor.registerCommand<ClipboardEvent>(
       PASTE_COMMAND,
       (event) => {
+        if (selectedTool === "web-search") {
+          return false;
+        }
+
         const pastedText = event.clipboardData?.getData("Text");
 
         if (pastedText) {
@@ -158,26 +290,155 @@ export default function ChatInterface({}: ChatInterfaceProps) {
       removeCommand?.();
       removePasteCommand?.();
     };
-  }, [editor, onSubmit, attachments.length]);
+  }, [editor, onSubmit, attachments.length, selectedTool]);
 
   const hasMessages = messages.length > 0;
+  const hasPendingImageMessage = messages.some(
+    (message) => message.metadata?.isGeneratingImage
+  );
 
-  // Extract text from message parts
-  const getMessageText = (
-    parts: Array<{ type: string; text?: string }>
-  ): string => {
-    return parts
-      .filter(
-        (part): part is { type: "text"; text: string } => part.type === "text"
-      )
-      .map((part) => part.text)
-      .join("");
-  };
+  useEffect(() => {
+    const section = heroEffectRef.current;
+    const overlay = heroOverlayRef.current;
+
+    if (!section || !overlay) return;
+
+    if (hasMessages) {
+      isHeroHoverRef.current = false;
+      revealRef.current = 0;
+      overlay.style.opacity = "0";
+      overlay.style.webkitMaskImage = "none";
+      overlay.style.maskImage = "none";
+      return;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const rect = entries[0]?.contentRect;
+      if (rect && rect.height > 0 && !isHeroHoverRef.current) {
+        maskYRef.current = rect.height / 2;
+        maskInitializedRef.current = true;
+      }
+    });
+
+    observer.observe(section);
+
+    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const tick = () => {
+      rafIdRef.current = requestAnimationFrame(tick);
+      revealRef.current = lerp(
+        revealRef.current,
+        isHeroHoverRef.current ? 1 : 0,
+        0.055
+      );
+
+      const activeOverlay = heroOverlayRef.current;
+      const activeSection = heroEffectRef.current;
+      if (!activeOverlay || !activeSection) return;
+
+      const width = activeSection.getBoundingClientRect().width;
+      const x = Math.max(0, Math.min(mouseRef.current.x, width));
+
+      activeOverlay.style.opacity = String(revealRef.current);
+      activeOverlay.style.webkitMaskImage = `radial-gradient(ellipse 65% 60% at ${x}px ${maskYRef.current}px, black 0%, black 40%, transparent 100%)`;
+      activeOverlay.style.maskImage = `radial-gradient(ellipse 65% 60% at ${x}px ${maskYRef.current}px, black 0%, black 40%, transparent 100%)`;
+    };
+
+    tick();
+
+    return () => {
+      observer.disconnect();
+      if (rafIdRef.current) cancelAnimationFrame(rafIdRef.current);
+    };
+  }, [hasMessages]);
+
+  const handleHeroMouseMove = useCallback(
+    (event: MouseEvent<HTMLDivElement>) => {
+      if (hasMessages) return;
+
+      const section = heroEffectRef.current;
+      if (!section) return;
+
+      const rect = section.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      const centerY = rect.height / 2;
+
+      if (!maskInitializedRef.current) {
+        maskYRef.current = centerY;
+        maskInitializedRef.current = true;
+      }
+
+      if (y >= centerY * 0.55) {
+        maskYRef.current = y;
+      }
+
+      mouseRef.current = { x, y };
+    },
+    [hasMessages]
+  );
+
+  const handleHeroMouseEnter = useCallback(() => {
+    if (hasMessages) return;
+    isHeroHoverRef.current = true;
+  }, [hasMessages]);
+
+  const handleHeroMouseLeave = useCallback(() => {
+    if (hasMessages) return;
+    isHeroHoverRef.current = false;
+  }, [hasMessages]);
+
+  const heroTitle = isAuthLoading
+    ? "Loading your workspace..."
+    : user?.name
+      ? `Welcome back, ${user.name}`
+      : "Say it. I'll make it real.";
 
   return (
-    <div className="relative h-full w-full overflow-hidden">
+    <div
+      ref={heroEffectRef}
+      className="relative h-full w-full overflow-hidden"
+      onMouseMove={handleHeroMouseMove}
+      onMouseEnter={handleHeroMouseEnter}
+      onMouseLeave={handleHeroMouseLeave}
+    >
+      {!hasMessages && (
+        <div className="pointer-events-none absolute inset-0 z-0 transition-all duration-300 ease-out">
+          <div
+            className="absolute inset-0 bg-center bg-no-repeat"
+            style={{
+              backgroundImage: "url('/hero-dither.png')",
+              backgroundSize: "cover",
+              opacity: 0.9,
+            }}
+          />
+          <div
+            ref={heroOverlayRef}
+            className="absolute inset-0 bg-center bg-no-repeat opacity-0"
+            style={{
+              backgroundImage: "url('/hero.png')",
+              backgroundSize: "cover",
+            }}
+          />
+          <div className="from-background/5 to-background/30 absolute inset-0 bg-gradient-to-b via-transparent" />
+        </div>
+      )}
+
+      <div className="absolute top-4 right-6 z-40 flex items-center gap-2">
+        <ThemeToggle />
+
+        <ConditionalTooltip
+          content="Share Chat"
+          side="bottom"
+          showTooltip={true}
+        >
+          <button className="border-border bg-card/60 hover:bg-accent flex items-center justify-center rounded-lg border p-3 transition-all duration-200 ease-in-out active:scale-95 active:duration-75">
+            <MessageSquareShare className="text-foreground size-4" />
+          </button>
+        </ConditionalTooltip>
+      </div>
+
       <div
-        className="custom-scrollbar h-full w-full overflow-y-auto transition-[padding] duration-100 ease-out"
+        className="custom-scrollbar relative z-10 h-full w-full overflow-y-auto transition-[padding] duration-100 ease-out"
         style={{ paddingBottom: hasMessages ? `${inputHeight}px` : "0px" }}
       >
         {!hasMessages && (
@@ -190,8 +451,8 @@ export default function ChatInterface({}: ChatInterfaceProps) {
               className="relative flex items-center justify-center space-x-5"
             >
               <Orb className="absolute -z-10 translate-y-1" />
-              <h1 className="text-center text-2xl leading-tight font-semibold text-pretty whitespace-pre-wrap text-white select-none sm:text-3xl md:text-4xl lg:text-5xl">
-                Say it. I'll make it real.
+              <h1 className="text-center text-2xl leading-tight font-semibold text-pretty whitespace-pre-wrap text-[#ffe3c6] select-none [text-shadow:0_1px_2px_rgba(255,255,255,0.72),0_8px_20px_rgba(0,0,0,0.35)] sm:text-3xl md:text-4xl lg:text-5xl dark:[text-shadow:0_2px_10px_rgba(0,0,0,0.75)]">
+                {heroTitle}
               </h1>
             </motion.div>
           </div>
@@ -201,10 +462,22 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           <div className="mx-auto flex w-full max-w-2xl flex-col items-center space-y-6 px-4 pt-5">
             <div className="flex w-full flex-col space-y-10">
               {messages.map((message) => {
-                const textContent = getMessageText(message.parts);
+                const textContent = message.parts
+                  .filter(
+                    (
+                      part
+                    ): part is Extract<
+                      (typeof message.parts)[number],
+                      { type: "text" }
+                    > => part.type === "text" && typeof part.text === "string"
+                  )
+                  .map((part) => part.text)
+                  .join("");
                 const attachments = message.metadata?.attachments || [];
                 const hasAttachments =
                   attachments.length > 0 && message.role === "user";
+                const generatedImageUrl = message.metadata?.generatedImageUrl;
+                const isGeneratingImage = message.metadata?.isGeneratingImage;
 
                 return (
                   <div
@@ -215,42 +488,59 @@ export default function ChatInterface({}: ChatInterfaceProps) {
                       {/* Attachments above message for user */}
                       {hasAttachments && (
                         <div className="flex space-x-2">
-                          {attachments.map((att: any) => (
+                          {attachments.map((att: ChatAttachment) => (
                             <AttachmentItem
                               key={att.id}
-                              attachment={{
-                                id: att.id,
-                                type: att.type,
-                                fileKey: att.fileKey,
-                                url: att.imageUrl || att.documentUrl,
-                                title: att.title,
-                                variant: "chat",
-                              }}
+                              attachment={toRenderableAttachment(att)}
                             />
                           ))}
                         </div>
                       )}
                       {/* Message text bubble */}
+                      {(textContent || !generatedImageUrl) &&
+                        !isGeneratingImage && (
+                          <div
+                            className={`rounded-2xl px-5 py-4 ${
+                              message.role === "user"
+                                ? "bg-primary text-primary-foreground"
+                                : "border-border bg-card text-card-foreground border"
+                            }`}
+                          >
+                            {message.role === "assistant" ? (
+                              <AssistantMessageContent message={message} />
+                            ) : textContent ? (
+                              textContent
+                            ) : (
+                              "Thinking..."
+                            )}
+                          </div>
+                        )}
 
-                      <div
-                        className={`rounded-2xl px-5 py-4 ${
-                          message.role === "user"
-                            ? "bg-black/70 text-white"
-                            : "bg-zinc-800 text-white"
-                        }`}
-                      >
-                        {textContent ? textContent : "Thinking..."}
-                      </div>
+                      {isGeneratingImage && message.role === "assistant" && (
+                        <ImageGenerationLoadingCard />
+                      )}
+
+                      {generatedImageUrl && message.role === "assistant" && (
+                        <div className="border-border bg-card overflow-hidden rounded-2xl border p-2">
+                          <img
+                            src={generatedImageUrl}
+                            alt={
+                              message.metadata?.imagePrompt || "Generated image"
+                            }
+                            className="max-h-[28rem] w-full rounded-xl object-cover"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 );
               })}
 
               {/* Streaming indicator */}
-              {status === "submitted" && (
+              {status === "submitted" && !hasPendingImageMessage && (
                 <div className="flex justify-start">
-                  <div className="max-w-[80%] rounded-lg bg-neutral-800 px-5 py-4">
-                    <span className="animate-pulse text-neutral-400">
+                  <div className="border-border bg-card max-w-[80%] rounded-lg border px-5 py-4">
+                    <span className="text-muted-foreground animate-pulse">
                       Thinking...
                     </span>
                   </div>
@@ -261,7 +551,7 @@ export default function ChatInterface({}: ChatInterfaceProps) {
 
             {/* Error display */}
             {error && (
-              <div className="w-full rounded-lg bg-red-900/50 px-4 py-2 text-red-200">
+              <div className="bg-destructive text-destructive-foreground w-full rounded-lg px-4 py-2">
                 Error: {error.message}
               </div>
             )}
@@ -288,11 +578,21 @@ export default function ChatInterface({}: ChatInterfaceProps) {
           ref={inputRef}
           className="pointer-events-auto w-full max-w-2xl pb-6"
         >
-          <FileUpload onFilesAdded={handleAddedFiles}>
+          <FileUpload
+            onFilesAdded={handleAddedFiles}
+            disabled={
+              isLoggingOut ||
+              selectedTool === "web-search" ||
+              isGuestMode ||
+              isAuthLoading
+            }
+          >
             <Chatbox
               onSubmitHandler={onSubmitHandler}
               handleAddedFiles={handleAddedFiles}
-              disabled={isStreaming || !isReady}
+              disabled={
+                isLoggingOut || isAuthLoading || isStreaming || !isReady
+              }
               files={files}
               setFiles={setFiles}
             />
