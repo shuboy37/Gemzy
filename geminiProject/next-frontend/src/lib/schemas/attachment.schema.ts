@@ -8,26 +8,33 @@ export const baseAttachmentSchema = z.object({
 
 export const imageAttachmentSchema = baseAttachmentSchema.extend({
   type: z.literal("image"),
+  mimeType: z.string().min(1, "Image MIME type is required"),
   url: z.string().url().min(1, "Image URL is required"),
 });
 
 export const pdfAttachmentSchema = baseAttachmentSchema.extend({
   type: z.literal("pdf"),
+  mimeType: z.literal("application/pdf"),
   url: z.string().url().min(1, "PDF URL is required"),
 });
 
 export const txtAttachmentSchema = baseAttachmentSchema.extend({
   type: z.literal("txt"),
+  mimeType: z.string().min(1, "Text MIME type is required"),
   url: z.string().url().min(1, "TXT URL is required"),
 });
 
 export const docxAttachmentSchema = baseAttachmentSchema.extend({
   type: z.literal("docx"),
+  mimeType: z.literal(
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+  ),
   url: z.string().url().optional(),
 });
 
 export const videoAttachmentSchema = baseAttachmentSchema.extend({
   type: z.literal("video"),
+  mimeType: z.string().min(1).optional(),
 });
 
 export const attachmentSchema = z.discriminatedUnion("type", [
@@ -40,6 +47,7 @@ export const attachmentSchema = z.discriminatedUnion("type", [
 
 export const chatRequestSchema = z.object({
   model: z.string().min(1, "Model is required"),
+  tool: z.enum(["chat", "web-search"]).optional(),
   attachments: z.array(attachmentSchema).optional(),
 });
 
